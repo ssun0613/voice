@@ -16,14 +16,14 @@ class Utterances(data.Dataset):
 
     def __init__(self, root_dir, feat_dir, mode):
         """Initialize and preprocess the Utterances dataset."""
-        self.root_dir = root_dir
-        self.feat_dir = feat_dir
-        self.mode = mode
+        self.root_dir = root_dir  # 'assets/spmel'
+        self.feat_dir = feat_dir  # 'assets/raptf0'
+        self.mode = mode  # 'train'
         self.step = 20
         self.split = 0
 
-        metaname = os.path.join(self.root_dir, "train.pkl")
-        meta = pickle.load(open(metaname, "rb"))
+        metaname = os.path.join(self.root_dir, "train.pkl")  # 'assets/spmel/train.pkl'
+        meta = pickle.load(open(metaname, "rb"))  # type : list,
 
         manager = Manager()
         meta = manager.list(meta)
