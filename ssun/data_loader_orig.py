@@ -6,6 +6,7 @@ import numpy as np
 from functools import partial
 from numpy.random import uniform
 from multiprocessing import Process, Manager
+# process : 병렬처리하므로써 더 빠르게 결과를 얻을 수 있음. manager : List or Dict 등의 변수를 공유 할 수 있음.
 
 from torch.utils import data
 from torch.utils.data.sampler import Sampler
@@ -23,7 +24,7 @@ class Utterances(data.Dataset):
         self.split = 0
 
         metaname = os.path.join(self.root_dir, "train.pkl")  # 'assets/spmel/train.pkl'
-        meta = pickle.load(open(metaname, "rb"))  # type : list,
+        meta = pickle.load(open(metaname, "rb"))
 
         manager = Manager()
         meta = manager.list(meta)
