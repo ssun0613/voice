@@ -37,7 +37,7 @@ class Utterances(data.Dataset):
         for p in processes:
             p.join()
 
-        # very importtant to do dataset = list(dataset)
+        # very important to do dataset = list(dataset)
         if mode == 'train':
             self.train_dataset = list(dataset)
             self.num_tokens = len(self.train_dataset)

@@ -4,7 +4,7 @@ import torch
 from torch.backends import cudnn
 
 from solver import Solver
-from data_loader import get_loader
+from data_loader_orig import get_loader
 from hparams import hparams, hparams_debug_string
 
 
