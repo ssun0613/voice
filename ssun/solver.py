@@ -51,22 +51,9 @@ class Solver(object):
         self.Interp = InterpLnr(self.hparams)
 
         self.g_optimizer = torch.optim.Adam(self.G.parameters(), self.g_lr, [self.beta1, self.beta2])
-        self.print_network(self.G, 'G')
 
         self.G.to(self.device)
         self.Interp.to(self.device)
-
-    def print_network(self, model, name):
-        num_params = 0
-        for p in model.parameters():
-            num_params += p.numel()
-        print(model)
-        print(name)
-        print("The number of parameters: {}".format(num_params))
-
-    def print_optimizer(self, opt, name):
-        print(opt)
-        print(name)
 
     def restore_model(self, resume_iters):
         print('Loading the trained models from step {}...'.format(resume_iters))
@@ -93,7 +80,6 @@ class Solver(object):
             start_iters = self.resume_iters
             self.num_iters += self.resume_iters
             self.restore_model(self.resume_iters)
-            self.print_optimizer(self.g_optimizer, 'G_optimizer')
 
         g_lr = self.g_lr
         print('Current learning rate, g_lr: {}.'.format(g_lr))
