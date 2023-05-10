@@ -3,26 +3,22 @@ import torch
 import pickle
 import numpy as np
 
-from functools import partial
 from numpy.random import uniform
 from multiprocessing import Process, Manager
+# process : 병렬처리하므로써 더 빠르게 결과를 얻을 수 있음. manager : List or Dict 등의 변수를 공유 할 수 있음.
 
 from torch.utils import data
 from torch.utils.data.sampler import Sampler
 
-
 class Utterances(data.Dataset):
-    """Dataset class for the Utterances dataset."""
-
     def __init__(self, root_dir, feat_dir, mode):
-        """Initialize and preprocess the Utterances dataset."""
-        self.root_dir = root_dir
-        self.feat_dir = feat_dir
-        self.mode = mode
+        self.root_dir = root_dir  # 'assets/spmel'
+        self.feat_dir = feat_dir  # 'assets/raptf0'
+        self.mode = mode  # 'train'
         self.step = 20
         self.split = 0
 
-        metaname = os.path.join(self.root_dir, "train.pkl")
+        metaname = os.path.join(self.root_dir, "train.pkl")  # 'assets/spmel/train.pkl'
         meta = pickle.load(open(metaname, "rb"))
 
         manager = Manager()
@@ -30,14 +26,14 @@ class Utterances(data.Dataset):
         dataset = manager.list(len(meta) * [None])  # <-- can be shared between processes.
         processes = []
         for i in range(0, len(meta), self.step):
-            p = Process(target=self.load_data,
-                        args=(meta[i:i + self.step], dataset, i, mode))
+            p = Process(target=self.load_data, args=(meta[i:i + self.step], dataset, i, mode))
             p.start()
             processes.append(p)
+
         for p in processes:
             p.join()
 
-        # very importtant to do dataset = list(dataset)
+        # very important to do dataset = list(dataset)
         if mode == 'train':
             self.train_dataset = list(dataset)
             self.num_tokens = len(self.train_dataset)
@@ -81,7 +77,6 @@ class Utterances(data.Dataset):
         return melsp, emb_org, f0_org
 
     def __len__(self):
-        """Return the number of spkrs."""
         return self.num_tokens
 
 
@@ -123,29 +118,21 @@ class MyCollator(object):
 
 
 class MultiSampler(Sampler):
-    """Samples elements more than once in a single pass through the data.
-    """
-
     def __init__(self, num_samples, n_repeats, shuffle=False):
         self.num_samples = num_samples
         self.n_repeats = n_repeats
         self.shuffle = shuffle
-
     def gen_sample_array(self):
         self.sample_idx_array = torch.arange(self.num_samples, dtype=torch.int64).repeat(self.n_repeats)
         if self.shuffle:
             self.sample_idx_array = self.sample_idx_array[torch.randperm(len(self.sample_idx_array))]
         return self.sample_idx_array
-
     def __iter__(self):
         return iter(self.gen_sample_array())
 
     def __len__(self):
         return len(self.sample_idx_array)
-
-
 def get_loader(hparams):
-    """Build and return a data loader."""
 
     dataset = Utterances(hparams.root_dir, hparams.feat_dir, hparams.mode)
 
