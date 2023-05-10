@@ -5,8 +5,7 @@ import numpy as np
 
 from functools import partial
 from numpy.random import uniform
-from multiprocessing import Process, Manager
-# process : 병렬처리하므로써 더 빠르게 결과를 얻을 수 있음. manager : List or Dict 등의 변수를 공유 할 수 있음.
+from multiprocessing import Process, Manager # process : 병렬처리하므로써 더 빠르게 결과를 얻을 수 있음. manager : List or Dict 등의 변수를 공유 할 수 있음.
 
 from torch.utils import data
 from torch.utils.data.sampler import Sampler
@@ -72,11 +71,11 @@ class Utterances(data.Dataset):
     def __getitem__(self, index):
         dataset = self.train_dataset if self.mode == 'train' else self.test_dataset
 
-        list_uttrs = dataset[index] # len(list_uttrs)=3,
-        spk_id_org = list_uttrs[0] # speaker id, spk_id_org : 'p226'
-        emb_org = list_uttrs[1] # embedding, emb_org.shape : (82,)
+        list_uttrs = dataset[index]  # len(list_uttrs)=3,
+        spk_id_org = list_uttrs[0]  # speaker id, spk_id_org : 'p226'
+        emb_org = list_uttrs[1]  # embedding, emb_org.shape : (82,)
 
-        melsp, f0_org = list_uttrs[2] # melsp.shape : (18877, 80) , f0_org.shape : (18877,)
+        melsp, f0_org = list_uttrs[2]  # melsp.shape : (18877, 80) , f0_org.shape : (18877,)
 
         return melsp, emb_org, f0_org
 
@@ -88,9 +87,9 @@ class MyCollator(object):
 
     def __init__(self, hparams):
         print('start')
-        self.min_len_seq = hparams.min_len_seq # 64
-        self.max_len_seq = hparams.max_len_seq # 128
-        self.max_len_pad = hparams.max_len_pad # 192
+        self.min_len_seq = hparams.min_len_seq  # 64
+        self.max_len_seq = hparams.max_len_seq  # 128
+        self.max_len_pad = hparams.max_len_pad  # 192
 
     def __call__(self, batch):
         # batch[i] is a tuple of __getitem__ outputs
@@ -142,6 +141,7 @@ class MultiSampler(Sampler):
 
     def __len__(self):
         return len(self.sample_idx_array)
+
 def get_loader(hparams):
 
     dataset = Utterances(hparams.root_dir, hparams.feat_dir, hparams.mode)
