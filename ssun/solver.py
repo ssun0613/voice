@@ -96,20 +96,20 @@ class Solver(object):
                 data_iter = iter(data_loader)
                 x_real_org, emb_org, f0_org, len_org = next(data_iter)
 
-            x_real_org = x_real_org.to(self.device)
-            emb_org = emb_org.to(self.device)
-            len_org = len_org.to(self.device)
-            f0_org = f0_org.to(self.device)
+            x_real_org = x_real_org.to(self.device)  # x_real_org.shape : torch.Size([2, 192, 80])
+            emb_org = emb_org.to(self.device)  # emb_org.shape : torch.Size([2, 82])
+            len_org = len_org.to(self.device)  # len_org.shape : torch.Size([2])
+            f0_org = f0_org.to(self.device)  # f0_org.shape : torch.Size([2, 192, 1])
 
             # ------- 2. train the generator -------
             self.G = self.G.train()
 
-            x_f0 = torch.cat((x_real_org, f0_org), dim=-1)
-            x_f0_intrp = self.Interp(x_f0, len_org)
-            f0_org_intrp = quantize_f0_torch(x_f0_intrp[:, :, -1])[0]
-            x_f0_intrp_org = torch.cat((x_f0_intrp[:, :, :-1], f0_org_intrp), dim=-1)
+            x_f0 = torch.cat((x_real_org, f0_org), dim=-1) # x_f0.shape : torch.Size([2, 192, 81])
+            x_f0_intrp = self.Interp(x_f0, len_org) # x_f0_intrp.shape : torch.Size([2, 192, 81])
+            f0_org_intrp = quantize_f0_torch(x_f0_intrp[:, :, -1])[0] # f0_org_intrp.shape : torch.Size([2, 192, 257]), type(quantize_f0_torch(x_f0_intrp[:, :, -1])) : tuple
+            x_f0_intrp_org = torch.cat((x_f0_intrp[:, :, :-1], f0_org_intrp), dim=-1) # x_f0_intrp_org.shape : torch.Size([2, 192, 337])
 
-            x_identic = self.G(x_f0_intrp_org, x_real_org, emb_org)
+            x_identic = self.G(x_f0_intrp_org, x_real_org, emb_org) # input : torch.Size([2, 192, 337]), torch.Size([2, 192, 80]), torch.Size([2, 82]), output : torch.Size([2, 192, 80])
             g_loss_id = F.mse_loss(x_real_org, x_identic, reduction='mean')
 
             g_loss = g_loss_id
