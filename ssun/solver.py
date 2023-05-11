@@ -1,5 +1,5 @@
-from models import Generator_3 as Generator
-from models import InterpLnr
+from models_deb import Generator_3 as Generator
+from models_deb import InterpLnr
 import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F
@@ -51,22 +51,9 @@ class Solver(object):
         self.Interp = InterpLnr(self.hparams)
 
         self.g_optimizer = torch.optim.Adam(self.G.parameters(), self.g_lr, [self.beta1, self.beta2])
-        self.print_network(self.G, 'G')
 
         self.G.to(self.device)
         self.Interp.to(self.device)
-
-    def print_network(self, model, name):
-        num_params = 0
-        for p in model.parameters():
-            num_params += p.numel()
-        print(model)
-        print(name)
-        print("The number of parameters: {}".format(num_params))
-
-    def print_optimizer(self, opt, name):
-        print(opt)
-        print(name)
 
     def restore_model(self, resume_iters):
         print('Loading the trained models from step {}...'.format(resume_iters))
@@ -93,7 +80,6 @@ class Solver(object):
             start_iters = self.resume_iters
             self.num_iters += self.resume_iters
             self.restore_model(self.resume_iters)
-            self.print_optimizer(self.g_optimizer, 'G_optimizer')
 
         g_lr = self.g_lr
         print('Current learning rate, g_lr: {}.'.format(g_lr))
@@ -110,20 +96,20 @@ class Solver(object):
                 data_iter = iter(data_loader)
                 x_real_org, emb_org, f0_org, len_org = next(data_iter)
 
-            x_real_org = x_real_org.to(self.device)
-            emb_org = emb_org.to(self.device)
-            len_org = len_org.to(self.device)
-            f0_org = f0_org.to(self.device)
+            x_real_org = x_real_org.to(self.device)  # x_real_org.shape : torch.Size([2, 192, 80])
+            emb_org = emb_org.to(self.device)  # emb_org.shape : torch.Size([2, 82])
+            len_org = len_org.to(self.device)  # len_org.shape : torch.Size([2])
+            f0_org = f0_org.to(self.device)  # f0_org.shape : torch.Size([2, 192, 1])
 
             # ------- 2. train the generator -------
             self.G = self.G.train()
 
-            x_f0 = torch.cat((x_real_org, f0_org), dim=-1)
-            x_f0_intrp = self.Interp(x_f0, len_org)
-            f0_org_intrp = quantize_f0_torch(x_f0_intrp[:, :, -1])[0]
-            x_f0_intrp_org = torch.cat((x_f0_intrp[:, :, :-1], f0_org_intrp), dim=-1)
+            x_f0 = torch.cat((x_real_org, f0_org), dim=-1) # x_f0.shape : torch.Size([2, 192, 81])
+            x_f0_intrp = self.Interp(x_f0, len_org) # x_f0_intrp.shape : torch.Size([2, 192, 81])
+            f0_org_intrp = quantize_f0_torch(x_f0_intrp[:, :, -1])[0] # f0_org_intrp.shape : torch.Size([2, 192, 257]), type(quantize_f0_torch(x_f0_intrp[:, :, -1])) : tuple
+            x_f0_intrp_org = torch.cat((x_f0_intrp[:, :, :-1], f0_org_intrp), dim=-1) # x_f0_intrp_org.shape : torch.Size([2, 192, 337])
 
-            x_identic = self.G(x_f0_intrp_org, x_real_org, emb_org)
+            x_identic = self.G(x_f0_intrp_org, x_real_org, emb_org) # input : torch.Size([2, 192, 337]), torch.Size([2, 192, 80]), torch.Size([2, 82]), output : torch.Size([2, 192, 80])
             g_loss_id = F.mse_loss(x_real_org, x_identic, reduction='mean')
 
             g_loss = g_loss_id
@@ -147,15 +133,12 @@ class Solver(object):
                 if self.use_tensorboard:
                     for tag, value in loss.items():
                         self.writer.add_scalar(tag, value, i+1)
-                    self.writer.add_figure('generated/mel_spectorgram_num_iters_{}'.format(i),
-                                           plot_spectrogram(x_identic[0].squeeze(0).cpu().numpy()), i)
-                    self.writer.add_figure('gt/mel_spectorgram_num_iters_{}'.format(i),
-                                           plot_spectrogram(x_real_org[0].squeeze(0).cpu().numpy()), i)
+                    self.writer.add_figure('generated/mel_spectorgram_num_iters_{}'.format(i),plot_spectrogram(x_identic[0].squeeze(0).cpu().numpy()), i)
+                    self.writer.add_figure('gt/mel_spectorgram_num_iters_{}'.format(i),plot_spectrogram(x_real_org[0].squeeze(0).cpu().numpy()), i)
 
             # Save model checkpoints.
             if (i + 1) % self.model_save_step == 0:
                 G_path = os.path.join(self.model_save_dir, '{}-G.ckpt'.format(i + 1))
-                torch.save({'model': self.G.state_dict(),
-                            'optimizer': self.g_optimizer.state_dict()}, G_path)
+                torch.save({'model': self.G.state_dict(),'optimizer': self.g_optimizer.state_dict()}, G_path)
                 print('Saved model checkpoints into {}...'.format(self.model_save_dir))
 
