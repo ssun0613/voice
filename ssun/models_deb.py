@@ -82,20 +82,20 @@ class InterpLnr(nn.Module):
         batch_size = x.size(0)
 
         # indices of each sub segment
-        indices = torch.arange(self.max_len_seg * 2, device=device) \
-            .unsqueeze(0).expand(batch_size * self.max_num_seg, -1)
+        # a=torch.arange(self.max_len_seg * 2, device=device) # a.shape : torch.Size([64])
+        # b=a.unsqueeze(0) # b.shape : torch.Size([1, 64])
+        # c=b.expand(batch_size * self.max_num_seg, -1) # c.shape : torch.Size([14, 64])
+        indices = torch.arange(self.max_len_seg * 2, device=device).unsqueeze(0).expand(batch_size * self.max_num_seg, -1)
+
         # scales of each sub segment
-        scales = torch.rand(batch_size * self.max_num_seg,
-                            device=device) + 0.5
+        # e=torch.rand(batch_size * self.max_num_seg, device=device) # e.shape : torch.Size([14])
+        scales = torch.rand(batch_size * self.max_num_seg, device=device) + 0.5 # scales.shape : torch.Size([14])
 
-        idx_scaled = indices / scales.unsqueeze(-1)
-        idx_scaled_fl = torch.floor(idx_scaled)
-        lambda_ = idx_scaled - idx_scaled_fl
+        idx_scaled = indices / scales.unsqueeze(-1) # scales.unsqueeze(-1).shape : torch.Size([14, 1]), idx_scaled.shape : torch.Size([14, 64])
+        idx_scaled_fl = torch.floor(idx_scaled) # idx_scaled_fl.shape : torch.Size([14, 64])
+        lambda_ = idx_scaled - idx_scaled_fl # lambda_.shape : torch.Size([14, 64])
 
-        len_seg = torch.randint(low=self.min_len_seg,
-                                high=self.max_len_seg,
-                                size=(batch_size * self.max_num_seg, 1),
-                                device=device)
+        len_seg = torch.randint(low=self.min_len_seg, high=self.max_len_seg, size=(batch_size * self.max_num_seg, 1), device=device)
 
         # end point of each segment
         idx_mask = idx_scaled_fl < (len_seg - 1)
@@ -113,8 +113,7 @@ class InterpLnr(nn.Module):
 
         counts = idx_mask_final.sum(dim=-1).view(batch_size, -1).sum(dim=-1)
 
-        index_1 = torch.repeat_interleave(torch.arange(batch_size,
-                                                       device=device), counts)
+        index_1 = torch.repeat_interleave(torch.arange(batch_size, device=device), counts)
 
         index_2_fl = idx_scaled_org[idx_mask_final].long()
         index_2_cl = index_2_fl + 1
@@ -170,11 +169,7 @@ class Encoder_t(nn.Module):
         out_forward = outputs[:, :, :self.dim_neck_2]
         out_backward = outputs[:, :, self.dim_neck_2:]
 
-        codes = torch.cat(
-            (out_forward[:, self.freq_2-1::self.freq_2, :],
-             out_backward[:, ::self.freq_2, :]),
-            dim=-1
-        )
+        codes = torch.cat((out_forward[:, self.freq_2-1::self.freq_2, :], out_backward[:, ::self.freq_2, :]), dim=-1)
 
         return codes
 
@@ -286,7 +281,6 @@ class Decoder_3(nn.Module):
 
 class Generator_3(nn.Module):
     """SpeechSplit model"""
-
     def __init__(self, hparams):
         super().__init__()
 
@@ -297,7 +291,6 @@ class Generator_3(nn.Module):
         self.freq = hparams.freq
         self.freq_2 = hparams.freq_2
         self.freq_3 = hparams.freq_3
-
     def forward(self, x_f0, x_org, c_trg):
         x_1 = x_f0.transpose(2, 1)
         codes_x, codes_f0 = self.encoder_1(x_1)
