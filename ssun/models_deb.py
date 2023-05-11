@@ -1,45 +1,33 @@
 import torch
 import torch.nn as nn
+from torch.nn import init
 import torch.nn.functional as F
 import numpy as np
 
-from math import ceil
-from utils import get_mask_from_lengths
-
-
-class LinearNorm(torch.nn.Module):
+class LinearNorm(nn.Module):
     def __init__(self, in_dim, out_dim, bias=True, w_init_gain='linear'):
         super(LinearNorm, self).__init__()
-        self.linear_layer = torch.nn.Linear(in_dim, out_dim, bias=bias)
+        self.linear_layer = nn.Linear(in_dim, out_dim, bias=bias)
 
-        torch.nn.init.xavier_uniform_(
-            self.linear_layer.weight,
-            gain=torch.nn.init.calculate_gain(w_init_gain))
+        nn.init.xavier_uniform_(self.linear_layer.weight, gain=nn.init.calculate_gain(w_init_gain))
 
     def forward(self, x):
         return self.linear_layer(x)
 
-
-class ConvNorm(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1,
-                 padding=None, dilation=1, bias=True, w_init_gain='linear'):
+class ConvNorm(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=None, dilation=1, bias=True, w_init_gain='linear'):
         super(ConvNorm, self).__init__()
         if padding is None:
             assert(kernel_size % 2 == 1)
             padding = int(dilation * (kernel_size - 1) / 2)
 
-        self.conv = torch.nn.Conv1d(in_channels, out_channels,
-                                    kernel_size=kernel_size, stride=stride,
-                                    padding=padding, dilation=dilation,
-                                    bias=bias)
+        self.conv = nn.Conv1d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
 
-        torch.nn.init.xavier_uniform_(
-            self.conv.weight, gain=torch.nn.init.calculate_gain(w_init_gain))
+        nn.init.xavier_uniform_(self.conv.weight, gain=nn.init.calculate_gain(w_init_gain))
 
     def forward(self, signal):
         conv_signal = self.conv(signal)
         return conv_signal
-
 
 class InterpLnr(nn.Module):
     def __init__(self, hparams):
@@ -58,16 +46,6 @@ class InterpLnr(nn.Module):
         out_tensor = sequences[0].data.new(*out_dims).fill_(0)
 
         for i, tensor in enumerate(sequences):
-            # out_tensor shape: [#, len(sequences), max_len_pad, channel_dim]
-            # all elements of a initialized out_tensor is 0.
-            # (1) length < max_len_pad
-            #       out_tensor[i, :length, :] shape: [length, channel_dim]
-            #       tensor[:self.max_len_pad] shape: [length, channel_dim]
-            #       => a sequence are padded with (max_len_pad - length + 1) zeros.
-            # (2) length > max_len_pad
-            #       out_tensor[i, :length, :] shape: [max_len_pad, channel_dim]
-            #       tensor[:self.max_len_pad] shape: [max_len_pad, channel_dim]
-            #       => a sequence is cropped, whose length is max_len_pad.
             length = tensor.size(0)
             out_tensor[i, :length, :] = tensor[:self.max_len_pad]
 
@@ -130,7 +108,6 @@ class InterpLnr(nn.Module):
 
         return seq_padded
 
-
 class Encoder_t(nn.Module):
     """ Rhythm Encoder """
     def __init__(self, hparams):
@@ -145,13 +122,8 @@ class Encoder_t(nn.Module):
 
         convolutions = []
         for i in range(1):
-            conv_layer = nn.Sequential(
-                ConvNorm(self.dim_freq if i==0 else self.dim_enc_2,
-                         self.dim_enc_2,
-                         kernel_size=5, stride=1,
-                         padding=2, dilation=1, w_init_gain='relu'),
-                nn.GroupNorm(self.dim_enc_2//self.chs_grp, self.dim_enc_2)
-            )
+            conv_layer = nn.Sequential(ConvNorm(self.dim_freq if i == 0 else self.dim_enc_2, self.dim_enc_2, kernel_size=5, stride=1, padding=2, dilation=1, w_init_gain='relu'),
+                                       nn.GroupNorm(self.dim_enc_2//self.chs_grp, self.dim_enc_2))
             convolutions.append(conv_layer)
         self.convolutions = nn.ModuleList(convolutions)
 
@@ -172,7 +144,6 @@ class Encoder_t(nn.Module):
         codes = torch.cat((out_forward[:, self.freq_2-1::self.freq_2, :], out_backward[:, ::self.freq_2, :]), dim=-1)
 
         return codes
-
 
 class Encoder_7(nn.Module):
     def __init__(self, hparams):
@@ -195,13 +166,8 @@ class Encoder_7(nn.Module):
         # convolutions for code 1
         convolutions = []
         for i in range(3):
-            conv_layer = nn.Sequential(
-                ConvNorm(self.dim_freq if i==0 else self.dim_enc,
-                         self.dim_enc,
-                         kernel_size=5, stride=1, padding=2,
-                         dilation=1, w_init_gain='relu'),
-                nn.GroupNorm(self.dim_enc//self.chs_grp, self.dim_enc)
-            )
+            conv_layer = nn.Sequential(ConvNorm(self.dim_freq if i == 0 else self.dim_enc, self.dim_enc, kernel_size=5, stride=1, padding=2, dilation=1, w_init_gain='relu'),
+                                       nn.GroupNorm(self.dim_enc//self.chs_grp, self.dim_enc))
             convolutions.append(conv_layer)
         self.convolutions_1 = nn.ModuleList(convolutions)
         self.lstm_1 = nn.LSTM(self.dim_enc, self.dim_neck, 1, batch_first=True, bidirectional=True)
@@ -209,12 +175,8 @@ class Encoder_7(nn.Module):
         # convolutions for f0
         convolutions = []
         for i in range(3):
-            conv_layer = nn.Sequential(
-                ConvNorm(self.dim_f0 if i == 0 else self.dim_enc_3,
-                         self.dim_enc_3,
-                         kernel_size=5, stride=1, padding=2, dilation=1, w_init_gain='relu')
-            )
-            nn.GroupNorm(self.dim_enc_3//self.chs_grp, self.dim_enc_3)
+            conv_layer = nn.Sequential(ConvNorm(self.dim_f0 if i == 0 else self.dim_enc_3, self.dim_enc_3, kernel_size=5, stride=1, padding=2, dilation=1, w_init_gain='relu'),
+                                       nn.GroupNorm(self.dim_enc_3//self.chs_grp, self.dim_enc_3))
             convolutions.append(conv_layer)
         self.convolutions_2 = nn.ModuleList(convolutions)
         self.lstm_2 = nn.LSTM(self.dim_enc_3, self.dim_neck_3, 1, batch_first=True, bidirectional=True)
@@ -248,14 +210,11 @@ class Encoder_7(nn.Module):
         f0_forward = f0[:, :, :self.dim_neck_3]
         f0_backward = f0[:, :, self.dim_neck_3:]
 
-        codes_x = torch.cat((x_forward[:, self.freq-1::self.freq, :],
-                             x_backward[:, ::self.freq, :]), dim=-1)
+        codes_x = torch.cat((x_forward[:, self.freq-1::self.freq, :], x_backward[:, ::self.freq, :]), dim=-1)
 
-        codes_f0 = torch.cat((f0_forward[:, self.freq_3-1::self.freq_3, :],
-                              f0_backward[:, ::self.freq_3, :]), dim=-1)
+        codes_f0 = torch.cat((f0_forward[:, self.freq_3-1::self.freq_3, :], f0_backward[:, ::self.freq_3, :]), dim=-1)
 
         return codes_x, codes_f0
-
 
 class Decoder_3(nn.Module):
     def __init__(self, hparams):
@@ -266,24 +225,19 @@ class Decoder_3(nn.Module):
         self.dim_freq = hparams.dim_freq
         self.dim_neck_3 = hparams.dim_neck_3
 
-        self.lstm = nn.LSTM(self.dim_neck * 2 + self.dim_neck_2 * 2 + self.dim_neck_3 * 2 + self.dim_emb,
-                            512, 3, batch_first=True, bidirectional=True)
+        self.lstm = nn.LSTM(self.dim_neck * 2 + self.dim_neck_2 * 2 + self.dim_neck_3 * 2 + self.dim_emb, 512, 3, batch_first=True, bidirectional=True)
 
         self.linear_projection = LinearNorm(1024, self.dim_freq)
 
     def forward(self, x):
         outputs, _ = self.lstm(x)
-
         decoder_output = self.linear_projection(outputs)
-
         return decoder_output
 
 
 class Generator_3(nn.Module):
-    """SpeechSplit model"""
     def __init__(self, hparams):
         super().__init__()
-
         self.encoder_1 = Encoder_7(hparams)
         self.encoder_2 = Encoder_t(hparams)
         self.decoder = Decoder_3(hparams)
@@ -301,11 +255,9 @@ class Generator_3(nn.Module):
         codes_2 = self.encoder_2(x_2, mask=None)
         code_exp_2 = codes_2.repeat_interleave(self.freq_2, dim=1)
 
-        encoder_outputs = torch.cat((code_exp_1, code_exp_2, code_exp_3,
-                                     c_trg.unsqueeze(1).expand(-1, x_1.size(-1), -1)), dim=-1)
+        encoder_outputs = torch.cat((code_exp_1, code_exp_2, code_exp_3,c_trg.unsqueeze(1).expand(-1, x_1.size(-1), -1)), dim=-1)
         mel_outputs = self.decoder(encoder_outputs)
         return mel_outputs
-
     def rhythm(self, x_org):
         x_2 = x_org.transpose(2, 1)
         codes_2 = self.encoder_2(x_2, mask=None)
