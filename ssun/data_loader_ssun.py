@@ -12,7 +12,6 @@ from torch.utils import data
 from torch.utils.data.sampler import Sampler
 
 class Utterances(data.Dataset):
-
     def __init__(self, root_dir, feat_dir, mode):
         self.root_dir = root_dir  # 'assets/spmel'
         self.feat_dir = feat_dir  # 'assets/raptf0'
