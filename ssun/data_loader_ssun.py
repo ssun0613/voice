@@ -42,7 +42,6 @@ class Utterances(data.Dataset):
             self.num_tokens = len(self.test_dataset)
         else:
             raise ValueError
-
     def load_data(self, submeta, dataset, idx_offset, mode):
         for k, sbmt in enumerate(submeta):
             uttrs = len(sbmt) * [None]
@@ -64,7 +63,6 @@ class Utterances(data.Dataset):
                 raise ValueError
             uttrs[2] = (sp_tmp, f0_tmp)
             dataset[idx_offset + k] = uttrs
-
     def __getitem__(self, index):
         dataset = self.train_dataset if self.mode == 'train' else self.test_dataset
 
@@ -75,13 +73,11 @@ class Utterances(data.Dataset):
         melsp, f0_org = list_uttrs[2]  # melsp.shape : (18877, 80) , f0_org.shape : (18877,)
 
         return melsp, emb_org, f0_org
-
     def __len__(self):
         return self.num_tokens
 
 
 class MyCollator(object):
-
     def __init__(self, hparams):
         print('start')
         self.min_len_seq = hparams.min_len_seq  # 64
@@ -119,12 +115,10 @@ class MyCollator(object):
         return melsp, spk_emb, pitch, len_org
 
 class MultiSampler(Sampler):
-
     def __init__(self, num_samples, n_repeats, shuffle=False):
         self.num_samples = num_samples # 2
         self.n_repeats = n_repeats # 1
         self.shuffle = shuffle
-
     def gen_sample_array(self):
         arr = torch.arange(self.num_samples, dtype=torch.int64) # tensor([0, 1])
         self.sample_idx_array = arr.repeat(self.n_repeats) # tensor([0, 1])
@@ -132,10 +126,8 @@ class MultiSampler(Sampler):
             randperm = torch.randperm(len(self.sample_idx_array)) # tensor([0, 1])
             self.sample_idx_array = self.sample_idx_array[randperm] # tensor([0, 1])
         return self.sample_idx_array
-
     def __iter__(self):
         return iter(self.gen_sample_array())
-
     def __len__(self):
         return len(self.sample_idx_array)
 

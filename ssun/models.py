@@ -209,7 +209,7 @@ class Encoder_7(nn.Module):
             )
             convolutions.append(conv_layer)
         self.convolutions_1 = nn.ModuleList(convolutions)
-        self.lstm_1 = nn.LSTM(self.dim_enc_3, self.dim_neck_3, 1, batch_first=True, bidirectional=True)
+        self.lstm_1 = nn.LSTM(self.dim_enc, self.dim_neck, 1, batch_first=True, bidirectional=True)
 
         # convolutions for f0
         convolutions = []
@@ -286,7 +286,6 @@ class Decoder_3(nn.Module):
 
 class Generator_3(nn.Module):
     """SpeechSplit model"""
-
     def __init__(self, hparams):
         super().__init__()
 
@@ -297,7 +296,6 @@ class Generator_3(nn.Module):
         self.freq = hparams.freq
         self.freq_2 = hparams.freq_2
         self.freq_3 = hparams.freq_3
-
     def forward(self, x_f0, x_org, c_trg):
         x_1 = x_f0.transpose(2, 1)
         codes_x, codes_f0 = self.encoder_1(x_1)
@@ -317,4 +315,3 @@ class Generator_3(nn.Module):
         x_2 = x_org.transpose(2, 1)
         codes_2 = self.encoder_2(x_2, mask=None)
         return codes_2
-
