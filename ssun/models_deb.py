@@ -76,7 +76,7 @@ class InterpLnr(nn.Module):
         len_seg = torch.randint(low=self.min_len_seg, high=self.max_len_seg, size=(batch_size * self.max_num_seg, 1), device=device) # len_seg.shape : torch.Size([14, 1])
 
         # end point of each segment
-        idx_mask = idx_scaled_fl < (len_seg - 1)
+        idx_mask = idx_scaled_fl < (len_seg - 1) # idx_mask.shape : torch.Size([14, 64])
 
         offset = len_seg.view(batch_size, -1).cumsum(dim=-1)
         # offset starts from the 2nd segment
