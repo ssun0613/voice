@@ -1,5 +1,5 @@
-from models import Generator_3 as Generator
-from models import InterpLnr
+from models_pro import Generator_3 as Generator
+from models_pro import InterpLnr
 import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F
