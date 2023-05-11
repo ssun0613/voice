@@ -133,15 +133,12 @@ class Solver(object):
                 if self.use_tensorboard:
                     for tag, value in loss.items():
                         self.writer.add_scalar(tag, value, i+1)
-                    self.writer.add_figure('generated/mel_spectorgram_num_iters_{}'.format(i),
-                                           plot_spectrogram(x_identic[0].squeeze(0).cpu().numpy()), i)
-                    self.writer.add_figure('gt/mel_spectorgram_num_iters_{}'.format(i),
-                                           plot_spectrogram(x_real_org[0].squeeze(0).cpu().numpy()), i)
+                    self.writer.add_figure('generated/mel_spectorgram_num_iters_{}'.format(i),plot_spectrogram(x_identic[0].squeeze(0).cpu().numpy()), i)
+                    self.writer.add_figure('gt/mel_spectorgram_num_iters_{}'.format(i),plot_spectrogram(x_real_org[0].squeeze(0).cpu().numpy()), i)
 
             # Save model checkpoints.
             if (i + 1) % self.model_save_step == 0:
                 G_path = os.path.join(self.model_save_dir, '{}-G.ckpt'.format(i + 1))
-                torch.save({'model': self.G.state_dict(),
-                            'optimizer': self.g_optimizer.state_dict()}, G_path)
+                torch.save({'model': self.G.state_dict(),'optimizer': self.g_optimizer.state_dict()}, G_path)
                 print('Saved model checkpoints into {}...'.format(self.model_save_dir))
 
