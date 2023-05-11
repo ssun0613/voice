@@ -82,11 +82,9 @@ class InterpLnr(nn.Module):
         batch_size = x.size(0)
 
         # indices of each sub segment
-        indices = torch.arange(self.max_len_seg * 2, device=device) \
-            .unsqueeze(0).expand(batch_size * self.max_num_seg, -1)
+        indices = torch.arange(self.max_len_seg * 2, device=device).unsqueeze(0).expand(batch_size * self.max_num_seg, -1)
         # scales of each sub segment
-        scales = torch.rand(batch_size * self.max_num_seg,
-                            device=device) + 0.5
+        scales = torch.rand(batch_size * self.max_num_seg, device=device) + 0.5
 
         idx_scaled = indices / scales.unsqueeze(-1)
         idx_scaled_fl = torch.floor(idx_scaled)
