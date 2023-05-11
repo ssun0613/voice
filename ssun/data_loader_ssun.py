@@ -5,7 +5,8 @@ import numpy as np
 
 from functools import partial
 from numpy.random import uniform
-from multiprocessing import Process, Manager # process : 병렬처리하므로써 더 빠르게 결과를 얻을 수 있음. manager : List or Dict 등의 변수를 공유 할 수 있음.
+from multiprocessing import Process, Manager
+# process : 병렬처리하므로써 더 빠르게 결과를 얻을 수 있음. manager : List or Dict 등의 변수를 공유 할 수 있음.
 
 from torch.utils import data
 from torch.utils.data.sampler import Sampler
@@ -79,7 +80,6 @@ class Utterances(data.Dataset):
 
 class MyCollator(object):
     def __init__(self, hparams):
-        print('start')
         self.min_len_seq = hparams.min_len_seq  # 64
         self.max_len_seq = hparams.max_len_seq  # 128
         self.max_len_pad = hparams.max_len_pad  # 192
