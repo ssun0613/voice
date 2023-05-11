@@ -12,7 +12,6 @@ from torch.utils import data
 from torch.utils.data.sampler import Sampler
 
 class Utterances(data.Dataset):
-
     def __init__(self, root_dir, feat_dir, mode):
         self.root_dir = root_dir  # 'assets/spmel'
         self.feat_dir = feat_dir  # 'assets/raptf0'
@@ -44,8 +43,6 @@ class Utterances(data.Dataset):
             self.num_tokens = len(self.test_dataset)
         else:
             raise ValueError
-
-        print('Finished loading {} dataset...'.format(mode))
 
     def load_data(self, submeta, dataset, idx_offset, mode):
         for k, sbmt in enumerate(submeta):
