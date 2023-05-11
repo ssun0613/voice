@@ -73,7 +73,7 @@ class InterpLnr(nn.Module):
         idx_scaled_fl = torch.floor(idx_scaled) # idx_scaled_fl.shape : torch.Size([14, 64])
         lambda_ = idx_scaled - idx_scaled_fl # lambda_.shape : torch.Size([14, 64])
 
-        len_seg = torch.randint(low=self.min_len_seg, high=self.max_len_seg, size=(batch_size * self.max_num_seg, 1), device=device)
+        len_seg = torch.randint(low=self.min_len_seg, high=self.max_len_seg, size=(batch_size * self.max_num_seg, 1), device=device) # len_seg.shape : torch.Size([14, 1])
 
         # end point of each segment
         idx_mask = idx_scaled_fl < (len_seg - 1)
