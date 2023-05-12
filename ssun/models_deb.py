@@ -78,23 +78,24 @@ class InterpLnr(nn.Module):
         # end point of each segment
         idx_mask = idx_scaled_fl < (len_seg - 1) # idx_mask.shape : torch.Size([14, 64])
 
-        offset = len_seg.view(batch_size, -1).cumsum(dim=-1)
+        offset = len_seg.view(batch_size, -1).cumsum(dim=-1) # len_seg.view(batch_size, -1).shape : torch.Size([2, 7]), offset.shape : torch.Size([2, 7])
         # offset starts from the 2nd segment
-        offset = F.pad(offset[:, :-1], (1, 0), value=0).view(-1, 1)
+        offset = F.pad(offset[:, :-1], (1, 0), value=0).view(-1, 1) # offset.shape : torch.Size([14, 1])
 
-        idx_scaled_org = idx_scaled_fl + offset
+        idx_scaled_org = idx_scaled_fl + offset # idx_scaled_org.shape : torch.Size([14, 64])
 
-        len_seq_rp = torch.repeat_interleave(len_seq, self.max_num_seg)
-        idx_mask_org = idx_scaled_org < (len_seq_rp - 1).unsqueeze(-1)
+        len_seq_rp = torch.repeat_interleave(len_seq, self.max_num_seg) # len_seq_rp.shape : torch.Size([14])
+        idx_mask_org = idx_scaled_org < (len_seq_rp - 1).unsqueeze(-1) # idx_mask_org.shape : torch.Size([14, 64])
 
-        idx_mask_final = idx_mask & idx_mask_org
+        idx_mask_final = idx_mask & idx_mask_org # idx_mask_final.shape : torch.Size([14, 64])
 
         counts = idx_mask_final.sum(dim=-1).view(batch_size, -1).sum(dim=-1)
+        # idx_mask_final.sum(dim=-1).shape : torch.Size([14]), idx_mask_final.sum(dim=-1).view(batch_size, -1).shape : torch.Size([2, 7]), counts.shape : torch.Size([2])
 
-        index_1 = torch.repeat_interleave(torch.arange(batch_size, device=device), counts)
+        index_1 = torch.repeat_interleave(torch.arange(batch_size, device=device), counts) # index_1.shape : torch.Size([168])
 
-        index_2_fl = idx_scaled_org[idx_mask_final].long()
-        index_2_cl = index_2_fl + 1
+        index_2_fl = idx_scaled_org[idx_mask_final].long() # index_2_fl.shape : torch.Size([168])
+        index_2_cl = index_2_fl + 1 # index_2_cl.shape : torch.Size([168])
 
         y_fl = x[index_1, index_2_fl, :]
         y_cl = x[index_1, index_2_cl, :]
