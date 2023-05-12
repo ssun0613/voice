@@ -41,9 +41,9 @@ class InterpLnr(nn.Module):
         self.max_num_seg = self.max_len_seq // self.min_len_seg + 1
 
     def pad_sequences(self, sequences):
-        channel_dim = sequences[0].size()[-1]
-        out_dims = (len(sequences), self.max_len_pad, channel_dim)
-        out_tensor = sequences[0].data.new(*out_dims).fill_(0)
+        channel_dim = sequences[0].size()[-1] # channel_dim : 81
+        out_dims = (len(sequences), self.max_len_pad, channel_dim) # out_dims : (2, 192, 81)
+        out_tensor = sequences[0].data.new(*out_dims).fill_(0) # out_tensor.shape : torch.Size([2, 192, 81])
 
         for i, tensor in enumerate(sequences):
             length = tensor.size(0)
@@ -92,20 +92,21 @@ class InterpLnr(nn.Module):
         counts = idx_mask_final.sum(dim=-1).view(batch_size, -1).sum(dim=-1)
         # idx_mask_final.sum(dim=-1).shape : torch.Size([14]), idx_mask_final.sum(dim=-1).view(batch_size, -1).shape : torch.Size([2, 7]), counts.shape : torch.Size([2])
 
-        index_1 = torch.repeat_interleave(torch.arange(batch_size, device=device), counts) # index_1.shape : torch.Size([168])
+        index_1 = torch.repeat_interleave(torch.arange(batch_size, device=device), counts) # index_1.shape : torch.Size([counts[0]+counts[1]])
 
-        index_2_fl = idx_scaled_org[idx_mask_final].long() # index_2_fl.shape : torch.Size([168])
-        index_2_cl = index_2_fl + 1 # index_2_cl.shape : torch.Size([168])
+        index_2_fl = idx_scaled_org[idx_mask_final].long() # index_2_fl.shape : torch.Size([counts[0]+counts[1]])
+        index_2_cl = index_2_fl + 1 # index_2_cl.shape : torch.Size([counts[0]+counts[1]])
 
-        y_fl = x[index_1, index_2_fl, :]
-        y_cl = x[index_1, index_2_cl, :]
-        lambda_f = lambda_[idx_mask_final].unsqueeze(-1)
+        y_fl = x[index_1, index_2_fl, :] # y_fl.shape : torch.Size([counts[0]+counts[1], 81])
+        y_cl = x[index_1, index_2_cl, :] # y_cl.shape : torch.Size([counts[0]+counts[1], 81])
+        lambda_f = lambda_[idx_mask_final].unsqueeze(-1)  # lambda_[idx_mask_final].shape : torch.Size([counts[0]+counts[1]]), lambda_f.shape : torch.Size([counts[0]+counts[1], 1])
 
-        y = (1 - lambda_f) * y_fl + lambda_f * y_cl
+        y = (1 - lambda_f) * y_fl + lambda_f * y_cl # y.shape : torch.Size([counts[0]+counts[1], 81])
 
         sequences = torch.split(y, counts.tolist(), dim=0)
+        # type(sequences) : tuple, len(sequences) : 2, sequences[0].shape : torch.Size([counts[0], 81]), sequences[1].shape : torch.Size([counts[1], 81])
 
-        seq_padded = self.pad_sequences(sequences)
+        seq_padded = self.pad_sequences(sequences) # seq_padded.shape : torch.Size([2, 192, 81])
 
         return seq_padded
 
@@ -247,12 +248,12 @@ class Generator_3(nn.Module):
         self.freq_2 = hparams.freq_2
         self.freq_3 = hparams.freq_3
     def forward(self, x_f0, x_org, c_trg):
-        x_1 = x_f0.transpose(2, 1)
+        x_1 = x_f0.transpose(2, 1) # x_1.shape : torch.Size([2, 337, 192])
         codes_x, codes_f0 = self.encoder_1(x_1)
         code_exp_1 = codes_x.repeat_interleave(self.freq, dim=1)
         code_exp_3 = codes_f0.repeat_interleave(self.freq_3, dim=1)
 
-        x_2 = x_org.transpose(2, 1)
+        x_2 = x_org.transpose(2, 1) # x_2.shape : orch.Size([2, 80, 192])
         codes_2 = self.encoder_2(x_2, mask=None)
         code_exp_2 = codes_2.repeat_interleave(self.freq_2, dim=1)
 
