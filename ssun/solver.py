@@ -1,5 +1,7 @@
-from models_deb import Generator_3 as Generator
-from models_deb import InterpLnr
+# from models_deb import Generator_3 as Generator
+# from models_deb import InterpLnr
+from model_ssun import speechsplit as Generator
+from model_ssun import InterpLnr
 import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F
@@ -46,9 +48,13 @@ class Solver(object):
             self.build_tensorboard()
 
     def build_model(self):
-        self.G = Generator(self.hparams)
+        # self.G = Generator(self.hparams)
+        #
+        # self.Interp = InterpLnr(self.hparams)
 
-        self.Interp = InterpLnr(self.hparams)
+        self.G = Generator()
+
+        self.Interp = InterpLnr()
 
         self.g_optimizer = torch.optim.Adam(self.G.parameters(), self.g_lr, [self.beta1, self.beta2])
 
@@ -117,6 +123,7 @@ class Solver(object):
 
             g_loss = g_loss_id
             self.reset_grad()
+
             g_loss.backward()
             self.g_optimizer.step()
 
@@ -144,4 +151,3 @@ class Solver(object):
                 G_path = os.path.join(self.model_save_dir, '{}-G.ckpt'.format(i + 1))
                 torch.save({'model': self.G.state_dict(),'optimizer': self.g_optimizer.state_dict()}, G_path)
                 print('Saved model checkpoints into {}...'.format(self.model_save_dir))
-

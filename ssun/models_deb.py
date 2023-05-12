@@ -190,17 +190,17 @@ class Encoder_7(nn.Module):
         f0 = x_f0[:, self.dim_freq:, :]
 
         for conv_1, conv_2 in zip(self.convolutions_1, self.convolutions_2):
-            x = F.relu(conv_1(x))
-            f0 = F.relu(conv_2(f0))
-            x_f0 = torch.cat((x, f0), dim=1).transpose(1, 2)
-            x_f0 = self.interp(x_f0, self.len_org.expand(x.size(0)))
-            x_f0 = x_f0.transpose(1, 2)
-            x = x_f0[:, :self.dim_enc, :]
-            f0 = x_f0[:, self.dim_enc:, :]
+            x = F.relu(conv_1(x)) # x.shape : torch.Size([2, 512, 192])
+            f0 = F.relu(conv_2(f0)) # f0.shape : torch.Size([2, 256, 192])
+            x_f0 = torch.cat((x, f0), dim=1).transpose(1, 2) # torch.cat((x, f0), dim=1).shape : torch.Size([2, 768, 192]), x_f0.shape : torch.Size([2, 192, 768])
+            x_f0 = self.interp(x_f0, self.len_org.expand(x.size(0))) # x_f0.shape : torch.Size([2, 192, 768])
+            x_f0 = x_f0.transpose(1, 2) # x_f0.shape : torch.Size([2, 768, 192])
+            x = x_f0[:, :self.dim_enc, :]  # x.shape : torch.Size([2, 512, 192])
+            f0 = x_f0[:, self.dim_enc:, :] # f0.shape : torch.Size([2, 256, 192])
 
-        x_f0 = x_f0.transpose(1, 2)
-        x = x_f0[:, :, :self.dim_enc]
-        f0 = x_f0[:, :, self.dim_enc:]
+        x_f0 = x_f0.transpose(1, 2)  # x_f0.shape : torch.Size([2, 192, 768])
+        x = x_f0[:, :, :self.dim_enc] # x.shape : torch.Size([2, 192, 512])
+        f0 = x_f0[:, :, self.dim_enc:] # f0.shape : torch.Size([2, 192, 256])
 
         # code 1
         x = self.lstm_1(x)[0]
