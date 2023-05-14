@@ -114,11 +114,13 @@ class Solver(object):
             x_f0_intrp = self.Interp(x_f0, len_org) # x_f0_intrp.shape : torch.Size([2, 192, 81])
 
             # quantization
-            f0_org_intrp = quantize_f0_torch(x_f0_intrp[:, :, -1])[0] # f0_org_intrp.shape : torch.Size([2, 192, 257]), type(quantize_f0_torch(x_f0_intrp[:, :, -1])) : tuple
+            f0_org_intrp = quantize_f0_torch(x_f0_intrp[:, :, -1])[0]
+            # f0_org_intrp.shape : torch.Size([2, 192, 257]), type(quantize_f0_torch(x_f0_intrp[:, :, -1])) : tuple
 
             x_f0_intrp_org = torch.cat((x_f0_intrp[:, :, :-1], f0_org_intrp), dim=-1) # x_f0_intrp_org.shape : torch.Size([2, 192, 337])
 
-            x_identic = self.G(x_f0_intrp_org, x_real_org, emb_org) # input : torch.Size([2, 192, 337]), torch.Size([2, 192, 80]), torch.Size([2, 82]), output : torch.Size([2, 192, 80])
+            x_identic = self.G(x_f0_intrp_org, x_real_org, emb_org)
+            # input : torch.Size([2, 192, 337]), torch.Size([2, 192, 80]), torch.Size([2, 82]), output : torch.Size([2, 192, 80])
             g_loss_id = F.mse_loss(x_real_org, x_identic, reduction='mean')
 
             g_loss = g_loss_id

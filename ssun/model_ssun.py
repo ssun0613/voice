@@ -210,7 +210,8 @@ class InterpLnr(nn.Module):
         idx_scaled_fl = torch.floor(idx_scaled) # idx_scaled_fl.shape : torch.Size([14, 64])
         lambda_ = idx_scaled - idx_scaled_fl # lambda_.shape : torch.Size([14, 64])
 
-        len_seg = torch.randint(low=self.min_len_seg, high=self.max_len_seg, size=(batch_size * self.max_num_seg, 1), device=device) # len_seg.shape : torch.Size([14, 1])
+        len_seg = torch.randint(low=self.min_len_seg, high=self.max_len_seg, size=(batch_size * self.max_num_seg, 1), device=device)
+        # len_seg.shape : torch.Size([14, 1])
 
         # end point of each segment
         idx_mask = idx_scaled_fl < (len_seg - 1) # idx_mask.shape : torch.Size([14, 64])
@@ -227,7 +228,9 @@ class InterpLnr(nn.Module):
         idx_mask_final = idx_mask & idx_mask_org # idx_mask_final.shape : torch.Size([14, 64])
 
         counts = idx_mask_final.sum(dim=-1).view(batch_size, -1).sum(dim=-1)
-        # idx_mask_final.sum(dim=-1).shape : torch.Size([14]), idx_mask_final.sum(dim=-1).view(batch_size, -1).shape : torch.Size([2, 7]), counts.shape : torch.Size([2])
+        # idx_mask_final.sum(dim=-1).shape : torch.Size([14]),
+        # idx_mask_final.sum(dim=-1).view(batch_size, -1).shape : torch.Size([2, 7]),
+        # counts.shape : torch.Size([2])
 
         index_1 = torch.repeat_interleave(torch.arange(batch_size, device=device), counts) # index_1.shape : torch.Size([counts[0]+counts[1]])
 
@@ -236,7 +239,8 @@ class InterpLnr(nn.Module):
 
         y_fl = x[index_1, index_2_fl, :] # y_fl.shape : torch.Size([counts[0]+counts[1], 81])
         y_cl = x[index_1, index_2_cl, :] # y_cl.shape : torch.Size([counts[0]+counts[1], 81])
-        lambda_f = lambda_[idx_mask_final].unsqueeze(-1)  # lambda_[idx_mask_final].shape : torch.Size([counts[0]+counts[1]]), lambda_f.shape : torch.Size([counts[0]+counts[1], 1])
+        lambda_f = lambda_[idx_mask_final].unsqueeze(-1)
+        # lambda_[idx_mask_final].shape : torch.Size([counts[0]+counts[1]]), lambda_f.shape : torch.Size([counts[0]+counts[1], 1])
 
         y = (1 - lambda_f) * y_fl + lambda_f * y_cl # y.shape : torch.Size([counts[0]+counts[1], 81])
 
