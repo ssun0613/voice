@@ -247,6 +247,7 @@ class Generator_3(nn.Module):
         self.freq = hparams.freq
         self.freq_2 = hparams.freq_2
         self.freq_3 = hparams.freq_3
+
     def forward(self, x_f0, x_org, c_trg):
         x_1 = x_f0.transpose(2, 1) # x_1.shape : torch.Size([2, 337, 192])
         codes_x, codes_f0 = self.encoder_1(x_1)
@@ -260,6 +261,7 @@ class Generator_3(nn.Module):
         encoder_outputs = torch.cat((code_exp_1, code_exp_2, code_exp_3,c_trg.unsqueeze(1).expand(-1, x_1.size(-1), -1)), dim=-1)
         mel_outputs = self.decoder(encoder_outputs)
         return mel_outputs
+
     def rhythm(self, x_org):
         x_2 = x_org.transpose(2, 1)
         codes_2 = self.encoder_2(x_2, mask=None)

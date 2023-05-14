@@ -15,6 +15,7 @@ class speechsplit(nn.Module):
         self.freq_c = hparams.freq
         self.freq_r = hparams.freq_2
         self.freq_f = hparams.freq_3
+
     def forward(self, x_f0, x_org, c_trg):
         x_1 = x_f0.transpose(2, 1)
         codes_c, codes_f = self.Ec_Ef(x_1)
@@ -29,6 +30,7 @@ class speechsplit(nn.Module):
         mel_outputs = self.D(encoder_outputs)
 
         return mel_outputs
+
     def rhythm(self, x_org):
         x_2 = x_org.transpose(2, 1)
         codes_2 = self.Er(x_2, mask=None)
@@ -42,6 +44,7 @@ class Conv_layer(nn.Module):
             padding = int(dilation * (kernel_size - 1) / 2)
 
         self.Conv_layer = nn.Conv1d(in_channels = in_channels, out_channels = out_channels, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
+
     def forward(self, params):
         return self.Conv_layer(params)
 
@@ -58,6 +61,7 @@ class Er(nn.Module):
         self.conv_r = nn.Sequential(Conv_layer(self.dim_freq, self.dim_enc_r, kernel_size=5, stride=1, padding=2, dilation=1, w_init_gain='relu'),
                                     nn.GroupNorm(self.dim_enc_r // self.chs_grp, self.dim_enc_r))
         self.lstm_r = nn.LSTM(self.dim_enc_r, self.dim_neck_r, 1, batch_first=True, bidirectional=True)
+
     def forward(self, r, mask):
 
         for conv_r in self.conv_r:
@@ -66,6 +70,7 @@ class Er(nn.Module):
 
         self.lstm_r.flatten_parameters()
         outputs, _ = self.lstm_r(r)
+
         if mask is not None:
             outputs = outputs * mask
         out_forward = outputs[:, :, :self.dim_neck_r]
@@ -78,8 +83,8 @@ class Er(nn.Module):
 class Ec_Ef(nn.Module):
     def __init__(self):
         super().__init__()
-        # hparams that both use
         self.dim_freq = hparams.dim_freq
+        self.dim_f0 = hparams.dim_f0
         self.chs_grp = hparams.chs_grp
         self.register_buffer('len_org', torch.tensor(hparams.max_len_pad))
 
@@ -89,7 +94,6 @@ class Ec_Ef(nn.Module):
         self.dim_enc_c = hparams.dim_enc
 
         # hparams that Ef use
-        self.dim_f0 = hparams.dim_f0
         self.freq_f = hparams.freq_3
         self.dim_neck_f = hparams.dim_neck_3
         self.dim_enc_f = hparams.dim_enc_3
@@ -109,6 +113,7 @@ class Ec_Ef(nn.Module):
         self.lstm_f = nn.LSTM(self.dim_enc_f, self.dim_neck_f, 1, batch_first=True, bidirectional=True)
 
         self.interp = InterpLnr()
+
     def forward(self, c_f):
         c = c_f[:, :self.dim_freq, :]
         f = c_f[:, self.dim_freq:, :]
@@ -153,6 +158,7 @@ class D(nn.Module):
 
         self.lstm_d = nn.LSTM(self.dim_neck * 2 + self.dim_neck_2 * 2 + self.dim_neck_3 * 2 + self.dim_emb, 512, 3, batch_first=True, bidirectional=True)
         self.linear = nn.Linear(1024, self.dim_freq, bias=True)
+
     def forward(self, x):
         outputs, _ = self.lstm_d(x)
         decoder_output = self.linear(outputs)
@@ -160,6 +166,7 @@ class D(nn.Module):
         return decoder_output
 
 class InterpLnr(nn.Module):
+
     def __init__(self):
         super().__init__()
         self.max_len_seq = hparams.max_len_seq
@@ -169,6 +176,7 @@ class InterpLnr(nn.Module):
         self.max_len_seg = hparams.max_len_seg
 
         self.max_num_seg = self.max_len_seq // self.min_len_seg + 1
+
     def pad_sequences(self, sequences):
         channel_dim = sequences[0].size()[-1] # channel_dim : 81
         out_dims = (len(sequences), self.max_len_pad, channel_dim) # out_dims : (2, 192, 81)
@@ -179,6 +187,7 @@ class InterpLnr(nn.Module):
             out_tensor[i, :length, :] = tensor[:self.max_len_pad]
 
         return out_tensor
+
     def forward(self, x, len_seq):
 
         if not self.training:

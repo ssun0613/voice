@@ -1,7 +1,7 @@
-# from models_deb import Generator_3 as Generator
-# from models_deb import InterpLnr
-from model_ssun import speechsplit as Generator
-from model_ssun import InterpLnr
+from models_deb import Generator_3 as Generator
+from models_deb import InterpLnr
+# from model_ssun import speechsplit as Generator
+# from model_ssun import InterpLnr
 import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F
@@ -48,13 +48,13 @@ class Solver(object):
             self.build_tensorboard()
 
     def build_model(self):
-        # self.G = Generator(self.hparams)
+        self.G = Generator(self.hparams)
+
+        self.Interp = InterpLnr(self.hparams)
+
+        # self.G = Generator()
         #
-        # self.Interp = InterpLnr(self.hparams)
-
-        self.G = Generator()
-
-        self.Interp = InterpLnr()
+        # self.Interp = InterpLnr()
 
         self.g_optimizer = torch.optim.Adam(self.G.parameters(), self.g_lr, [self.beta1, self.beta2])
 
