@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
-from torch.nn import init
 import torch.nn.functional as F
-import numpy as np
 from hparams import hparams
 
 class speechsplit(nn.Module):
@@ -63,13 +61,12 @@ class Er(nn.Module):
         self.lstm_r = nn.LSTM(self.dim_enc_r, self.dim_neck_r, 1, batch_first=True, bidirectional=True)
 
     def forward(self, r, mask):
-
         for conv_r in self.conv_r:
             r = F.relu(conv_r(r))
         r = r.transpose(1, 2)
 
         self.lstm_r.flatten_parameters()
-        outputs, _ = self.lstm_r(r)
+        outputs = self.lstm_r(r)[0]
 
         if mask is not None:
             outputs = outputs * mask
@@ -160,13 +157,12 @@ class D(nn.Module):
         self.linear = nn.Linear(1024, self.dim_freq, bias=True)
 
     def forward(self, x):
-        outputs, _ = self.lstm_d(x)
-        decoder_output = self.linear(outputs)
+        output = self.lstm_d(x)[0]
+        decoder_output = self.linear(output)
 
         return decoder_output
 
 class InterpLnr(nn.Module):
-
     def __init__(self):
         super().__init__()
         self.max_len_seq = hparams.max_len_seq
@@ -189,20 +185,16 @@ class InterpLnr(nn.Module):
         return out_tensor
 
     def forward(self, x, len_seq):
-
         if not self.training:
             return x
-
         device = x.device
         batch_size = x.size(0)
 
-        # indices of each sub segment
         # a=torch.arange(self.max_len_seg * 2, device=device) # a.shape : torch.Size([64])
         # b=a.unsqueeze(0) # b.shape : torch.Size([1, 64])
         # c=b.expand(batch_size * self.max_num_seg, -1) # c.shape : torch.Size([14, 64])
         indices = torch.arange(self.max_len_seg * 2, device=device).unsqueeze(0).expand(batch_size * self.max_num_seg, -1)
 
-        # scales of each sub segment
         # e=torch.rand(batch_size * self.max_num_seg, device=device) # e.shape : torch.Size([14])
         scales = torch.rand(batch_size * self.max_num_seg, device=device) + 0.5 # scales.shape : torch.Size([14])
 
@@ -213,11 +205,10 @@ class InterpLnr(nn.Module):
         len_seg = torch.randint(low=self.min_len_seg, high=self.max_len_seg, size=(batch_size * self.max_num_seg, 1), device=device)
         # len_seg.shape : torch.Size([14, 1])
 
-        # end point of each segment
         idx_mask = idx_scaled_fl < (len_seg - 1) # idx_mask.shape : torch.Size([14, 64])
 
         offset = len_seg.view(batch_size, -1).cumsum(dim=-1) # len_seg.view(batch_size, -1).shape : torch.Size([2, 7]), offset.shape : torch.Size([2, 7])
-        # offset starts from the 2nd segment
+
         offset = F.pad(offset[:, :-1], (1, 0), value=0).view(-1, 1) # offset.shape : torch.Size([14, 1])
 
         idx_scaled_org = idx_scaled_fl + offset # idx_scaled_org.shape : torch.Size([14, 64])
