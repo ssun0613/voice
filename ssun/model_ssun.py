@@ -15,6 +15,7 @@ class speechsplit(nn.Module):
         self.freq_f = hparams.freq_3
 
     def forward(self, x_f0, x_org, c_trg):
+        # input : x_f0_intrp_org.shape : torch.Size([2, 192, 337]), x_real_org.shape : torch.Size([2, 192, 80]), emb_org.shape : torch.Size([2, 82])
         x_1 = x_f0.transpose(2, 1)
         codes_c, codes_f = self.Ec_Ef(x_1)
         codes_c_r = codes_c.repeat_interleave(self.freq_c, dim=1)
@@ -41,7 +42,7 @@ class Conv_layer(nn.Module):
             assert(kernel_size % 2 == 1)
             padding = int(dilation * (kernel_size - 1) / 2)
 
-        self.Conv_layer = nn.Conv1d(in_channels = in_channels, out_channels = out_channels, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
+        self.Conv_layer = nn.Conv1d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
 
     def forward(self, params):
         return self.Conv_layer(params)
