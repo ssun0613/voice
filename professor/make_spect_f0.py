@@ -1,3 +1,15 @@
+# --- For Debugging ---
+# import matplotlib
+# matplotlib.use('TkAgg')
+# import matplotlib.pyplot as plt
+# import numpy as np
+# x = np.linspace(0, D_mel.shape[0] - 1, D_mel.shape[0])
+# y = np.linspace(0, D_mel.shape[1] - 1, D_mel.shape[1])
+# X, Y = np.meshgrid(x, y)
+# fig_debug, axes = plt.subplots(1, 1, squeeze=False)
+# axes[0][0].pcolor(X, Y, D_mel)
+# ---------------------
+
 import os
 import sys
 import pickle
@@ -10,11 +22,15 @@ from pysptk import sptk
 from utils import butter_highpass
 from utils import speaker_normalization
 from utils import pySTFT
+import scipy.fftpack as fft
+from sklearn.preprocessing import minmax_scale
+import torch
 
-mel_basis = mel(16000, 1024, fmin=90, fmax=7600, n_mels=80).T
+mel_basis = mel(sr=16000, n_fft=1024, fmin=0, fmax=8000, n_mels=80).T
 min_level = np.exp(-100 / 20 * np.log(10))  # 10^-5
-b, a = butter_highpass(30, 16000, order=5)
+b, a = butter_highpass(cutoff=30, fs=16000, order=5)
 
+# speaker to gender
 spk2gen = pickle.load(open('assets/spk2gen.pkl', "rb"))
 
 # Modify as needed
@@ -48,7 +64,9 @@ for subdir in sorted(subdirList):
         assert fs == 16000
         if x.shape[0] % 256 == 0:
             x = np.concatenate((x, np.array([1e-06])), axis=0)
+        # Apply a digital filter forward and backward to a signal.
         y = signal.filtfilt(b, a, x)
+        # Add a noise signal, which is (prng.rand(y.shape[0]) - 0.5) * 1e-06.
         wav = y * 0.96 + (prng.rand(y.shape[0]) - 0.5) * 1e-06
 
         D = pySTFT(wav, fft_length=1024, hop_length=256).T
@@ -56,8 +74,15 @@ for subdir in sorted(subdirList):
         D_db = 20 * np.log10(np.maximum (min_level, D_mel)) - 16
         S = (D_db + 100) / 100
 
+        D_log = 20 * np.log10(D_mel.T)
+        mfcc = fft.dct(D_log, axis=0, norm='ortho').T
+        mfcc[:, 0:4] = 0
+        mfcc = minmax_scale(mfcc, axis=1)
+
         # extract f0
-        f0_rapt = sptk.rapt(wav.astype(np.float32) * 32768, fs, 256, min=lo, max=hi, otype=2)
+        # 2**15 = 32768 --> available maximum value for a speech signal
+        # 256 may be a hop length. 256/fs = 256/16000 [sec]
+        f0_rapt = sptk.rapt(wav.astype(np.float32) * 32768, fs, 256, min=lo, max=hi, otype='pitch')
         index_nonzero = (f0_rapt != -1e10)
         mean_f0, std_f0 = np.mean(f0_rapt[index_nonzero]), np.std(f0_rapt[index_nonzero])
         f0_norm = speaker_normalization(f0_rapt, index_nonzero, mean_f0, std_f0)
