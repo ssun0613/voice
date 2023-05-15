@@ -1,5 +1,6 @@
 import os
 import sys
+sys.path.append("..")
 import pickle
 import numpy as np
 import soundfile as sf
