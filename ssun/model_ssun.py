@@ -36,7 +36,7 @@ class speechsplit(nn.Module):
         return codes_2
 
 class Conv_layer(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=None, dilation=1, bias=True, w_init_gain='linear'):
+    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=None, dilation=1, bias=True):
         super(Conv_layer, self).__init__()
         if padding is None:
             assert(kernel_size % 2 == 1)
@@ -57,7 +57,7 @@ class Er(nn.Module):
         self.dim_freq = hparams.dim_freq
         self.chs_grp = hparams.chs_grp
 
-        self.conv_r = nn.Sequential(Conv_layer(self.dim_freq, self.dim_enc_r, kernel_size=5, stride=1, padding=2, dilation=1, w_init_gain='relu'),
+        self.conv_r = nn.Sequential(Conv_layer(self.dim_freq, self.dim_enc_r, kernel_size=5, stride=1, padding=2, dilation=1),
                                     nn.GroupNorm(self.dim_enc_r // self.chs_grp, self.dim_enc_r))
         self.lstm_r = nn.LSTM(self.dim_enc_r, self.dim_neck_r, 1, batch_first=True, bidirectional=True)
 
@@ -97,16 +97,16 @@ class Ec_Ef(nn.Module):
         self.dim_enc_f = hparams.dim_enc_3
 
         # Ec architecture
-        self.conv_c = nn.Sequential(Conv_layer(self.dim_freq, self.dim_enc_c, kernel_size=5, stride=1, padding=2, dilation=1, w_init_gain='relu'),
-                                    Conv_layer(self.dim_enc_c, self.dim_enc_c, kernel_size=5, stride=1, padding=2, dilation=1, w_init_gain='relu'),
-                                    Conv_layer(self.dim_enc_c, self.dim_enc_c, kernel_size=5, stride=1, padding=2, dilation=1, w_init_gain='relu'),
+        self.conv_c = nn.Sequential(Conv_layer(self.dim_freq, self.dim_enc_c, kernel_size=5, stride=1, padding=2, dilation=1),
+                                    Conv_layer(self.dim_enc_c, self.dim_enc_c, kernel_size=5, stride=1, padding=2, dilation=1),
+                                    Conv_layer(self.dim_enc_c, self.dim_enc_c, kernel_size=5, stride=1, padding=2, dilation=1),
                                     nn.GroupNorm(self.dim_enc_c//self.chs_grp, self.dim_enc_c))
         self.lstm_c = nn.LSTM(self.dim_enc_c, self.dim_neck_c, 1, batch_first=True, bidirectional=True)
 
         # Ef architecture
-        self.conv_f = nn.Sequential(Conv_layer(self.dim_f0, self.dim_enc_f, kernel_size=5, stride=1, padding=2, dilation=1, w_init_gain='relu'),
-                                    Conv_layer(self.dim_enc_f, self.dim_enc_f, kernel_size=5, stride=1, padding=2, dilation=1, w_init_gain='relu'),
-                                    Conv_layer(self.dim_enc_f, self.dim_enc_f, kernel_size=5, stride=1, padding=2, dilation=1, w_init_gain='relu'),
+        self.conv_f = nn.Sequential(Conv_layer(self.dim_f0, self.dim_enc_f, kernel_size=5, stride=1, padding=2, dilation=1),
+                                    Conv_layer(self.dim_enc_f, self.dim_enc_f, kernel_size=5, stride=1, padding=2, dilation=1),
+                                    Conv_layer(self.dim_enc_f, self.dim_enc_f, kernel_size=5, stride=1, padding=2, dilation=1),
                                     nn.GroupNorm(self.dim_enc_f//self.chs_grp, self.dim_enc_f))
         self.lstm_f = nn.LSTM(self.dim_enc_f, self.dim_neck_f, 1, batch_first=True, bidirectional=True)
 
