@@ -120,7 +120,8 @@ class Solver(object):
             x_f0_intrp_org = torch.cat((x_f0_intrp[:, :, :-1], f0_org_intrp), dim=-1) # x_f0_intrp_org.shape : torch.Size([2, 192, 337])
 
             x_identic = self.G(x_f0_intrp_org, x_real_org, emb_org)
-            # input : x_f0_intrp_org.shape : torch.Size([2, 192, 337]), x_real_org.shape : torch.Size([2, 192, 80]), emb_org.shape : torch.Size([2, 82]), output : torch.Size([2, 192, 80])
+            # input : x_f0_intrp_org.shape : torch.Size([2, 192, 337]), x_real_org.shape : torch.Size([2, 192, 80]), emb_org.shape : torch.Size([2, 82])
+            # output : torch.Size([2, 192, 80])
             g_loss_id = F.mse_loss(x_real_org, x_identic, reduction='mean')
 
             g_loss = g_loss_id
