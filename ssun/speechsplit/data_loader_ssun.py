@@ -43,6 +43,7 @@ class Utterances(data.Dataset):
             self.num_tokens = len(self.test_dataset)
         else:
             raise ValueError
+
     def load_data(self, submeta, dataset, idx_offset, mode):
         for k, sbmt in enumerate(submeta):
             uttrs = len(sbmt) * [None]
@@ -64,6 +65,7 @@ class Utterances(data.Dataset):
                 raise ValueError
             uttrs[2] = (sp_tmp, f0_tmp)
             dataset[idx_offset + k] = uttrs
+
     def __getitem__(self, index):
         dataset = self.train_dataset if self.mode == 'train' else self.test_dataset
 
@@ -76,7 +78,6 @@ class Utterances(data.Dataset):
         return melsp, emb_org, f0_org
     def __len__(self):
         return self.num_tokens
-
 
 class MyCollator(object):
     def __init__(self, hparams):
