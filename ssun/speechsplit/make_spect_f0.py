@@ -62,7 +62,7 @@ if __name__=='__main__':
 
         prng = RandomState(int(subdir[1:]))
         for fileName in sorted(fileList):
-            x, fs = sf.read(os.path.join(dirName, subdir, fileName))
+            x, fs = sf.read(os.path.join(dirName, subdir, fileName)) # x : audio, fs : sample_rate
             assert fs == 16000
             if x.shape[0] % 256 == 0:
                 x = np.concatenate((x, np.array([1e-06])), axis=0)

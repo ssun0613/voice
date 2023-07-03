@@ -14,7 +14,7 @@ import pickle
 from utils import pad_seq_to_2, quantize_f0_torch, quantize_f0_numpy, plot_spectrogram
 
 
-class Solver(object):
+class Solver():
     def __init__(self, vcc_loader, config, hparams):
         # Data loader
         self.vcc_loader = vcc_loader

@@ -2,7 +2,6 @@ import os
 import torch
 import pickle
 import numpy as np
-
 from functools import partial
 from numpy.random import uniform
 from multiprocessing import Process, Manager
@@ -22,27 +21,73 @@ class Utterances(data.Dataset):
         metaname = os.path.join(self.root_dir, "train.pkl")  # 'assets/spmel/train.pkl'
         meta = pickle.load(open(metaname, "rb"))
 
-        manager = Manager()
-        meta = manager.list(meta)
-        dataset = manager.list(len(meta) * [None])  # <-- can be shared between processes.
-        processes = []
-        for i in range(0, len(meta), self.step):
-            p = Process(target=self.load_data, args=(meta[i:i + self.step], dataset, i, self.mode))
-            p.start()
-            processes.append(p)
-
-        for p in processes:
-            p.join()
+        # dataset = self.load_data_hr(meta)
+        dataset = self.load_data_ssun(meta)
 
         # very important to do dataset = list(dataset)
         if mode == 'train':
-            self.train_dataset = list(dataset)
+            self.train_dataset = dataset
             self.num_tokens = len(self.train_dataset)
         elif mode == 'test':
-            self.test_dataset = list(dataset)
+            self.test_dataset = dataset
             self.num_tokens = len(self.test_dataset)
         else:
             raise ValueError
+
+    def load_data_hr(self, submeta):
+        dataset = []
+
+        for k, sbmt in enumerate(submeta):
+            uttrs = len(sbmt) * [None]
+            # fill in speaker id and embedding
+            uttrs[0] = sbmt[0]  # speaker id
+            uttrs[1] = sbmt[1]  # embedding
+
+            # fill in data
+            sp_tmp = np.load(os.path.join(self.root_dir, sbmt[2])) # sp_tmp.shape : [0 --> (18877, 80)], [1 --> (18902, 80)]
+            f0_tmp = np.load(os.path.join(self.feat_dir, sbmt[2])) # f0_tmp.shape : [0 --> (18877,)], [1 --> (18902,)]
+
+            if self.mode == 'train':
+                sp_tmp = sp_tmp[self.split:, :]
+                f0_tmp = f0_tmp[self.split:]
+            elif self.mode == 'test':
+                sp_tmp = sp_tmp[:self.split, :]
+                f0_tmp = f0_tmp[:self.split]
+            else:
+                raise ValueError
+            uttrs[2] = (sp_tmp, f0_tmp)
+            dataset.append(uttrs)
+
+        return dataset
+
+    def load_data_ssun(self, submeta):
+        dataset = []
+
+        for k, sbmt in enumerate(submeta):
+            # sbmt[0] = speaker id, sbmt[1] = embedding, sbmt[2] = data_path
+            uttrs = len(sbmt) * [None]
+
+            # fill in speaker id and embedding
+            # sbmt[0] = speaker id, sbmt[1] = embedding, sbmt[2] = data_path
+            uttrs[0] = sbmt[0]  # speaker id
+            uttrs[1] = sbmt[1]  # embedding
+
+            # fill in data
+            sp_tmp = np.load(os.path.join(self.root_dir, sbmt[2])) # sp_tmp.shape : [0 --> (18877, 80)], [1 --> (18902, 80)]
+            f0_tmp = np.load(os.path.join(self.feat_dir, sbmt[2])) # f0_tmp.shape : [0 --> (18877,)], [1 --> (18902,)]
+
+            if self.mode == 'train':
+                sp_tmp = sp_tmp[self.split:, :]
+                f0_tmp = f0_tmp[self.split:]
+            elif self.mode == 'test':
+                sp_tmp = sp_tmp[:self.split, :]
+                f0_tmp = f0_tmp[:self.split]
+            else:
+                raise ValueError
+            uttrs[2] = (sp_tmp, f0_tmp)
+            dataset.append(uttrs)
+
+        return dataset
 
     def load_data(self, submeta, dataset, idx_offset, mode):
         for k, sbmt in enumerate(submeta):
@@ -136,20 +181,18 @@ def get_loader(hparams):
 
     dataset = Utterances(hparams.root_dir, hparams.feat_dir, hparams.mode)
 
-    my_collator = MyCollator(hparams)
+    # my_collator = MyCollator(hparams)
 
-    sampler = MultiSampler(len(dataset), hparams.samplier, shuffle=hparams.shuffle)
+    # sampler = MultiSampler(len(dataset), hparams.samplier, shuffle=hparams.shuffle)
 
     worker_init_fn = lambda x: np.random.seed((torch.initial_seed()) % (2 ** 32))
 
-    data_loader = data.DataLoader(dataset=dataset,
-                                  batch_size=hparams.batch_size,
-                                  sampler=sampler,
+    data_loader = data.DataLoader(dataset=dataset, batch_size=hparams.batch_size, sampler=MultiSampler(len(dataset), hparams.samplier, shuffle=hparams.shuffle),
                                   num_workers=hparams.num_workers,
                                   drop_last=True,
                                   pin_memory=True,
                                   worker_init_fn=worker_init_fn,
-                                  collate_fn=my_collator)
+                                  collate_fn=MyCollator(hparams))
     return data_loader
 
 
