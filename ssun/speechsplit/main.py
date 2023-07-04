@@ -1,11 +1,13 @@
 import os
+import sys
+sys.path.append("..")
 import argparse
-import torch
 from torch.backends import cudnn
 
 from solver import Solver
-from data_loader_ssun import get_loader
-from hparams import hparams, hparams_debug_string
+# from data_loader_ssun import get_loader
+from ssun.voice.dataload.dataload_dacon import get_loader
+from hparams import hparams
 
 
 def str2bool(v):
@@ -25,7 +27,8 @@ def main(config):
         os.makedirs(config.sample_dir)
 
     # Data loader.
-    vcc_loader = get_loader(hparams)
+    # vcc_loader = get_loader(hparams)
+    vcc_loader = get_loader()
 
     # Solver for training
     solver = Solver(vcc_loader, config, hparams)

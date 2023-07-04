@@ -84,7 +84,7 @@ class Utterances(data.Dataset):
                 f0_tmp = f0_tmp[:self.split]
             else:
                 raise ValueError
-            uttrs[2] = (sp_tmp, f0_tmp)
+            uttrs[2] = (sp_tmp, f0_tmp) # if k==0, uttrs[2][0].shape : (18877,80), uttrs[2][1].shape : (18877,)
             dataset.append(uttrs)
 
         return dataset
@@ -121,6 +121,7 @@ class Utterances(data.Dataset):
         melsp, f0_org = list_uttrs[2]  # melsp.shape : (18877, 80) , f0_org.shape : (18877,)
 
         return melsp, emb_org, f0_org
+
     def __len__(self):
         return self.num_tokens
 
@@ -165,6 +166,7 @@ class MultiSampler(Sampler):
         self.num_samples = num_samples # 2
         self.n_repeats = n_repeats # 1
         self.shuffle = shuffle
+
     def gen_sample_array(self):
         arr = torch.arange(self.num_samples, dtype=torch.int64) # tensor([0, 1])
         self.sample_idx_array = arr.repeat(self.n_repeats) # tensor([0, 1])
@@ -172,8 +174,10 @@ class MultiSampler(Sampler):
             randperm = torch.randperm(len(self.sample_idx_array)) # tensor([0, 1])
             self.sample_idx_array = self.sample_idx_array[randperm] # tensor([0, 1])
         return self.sample_idx_array
+
     def __iter__(self):
         return iter(self.gen_sample_array())
+
     def __len__(self):
         return len(self.sample_idx_array)
 
@@ -197,4 +201,8 @@ def get_loader(hparams):
 
 
 if __name__ == "__main__":
-    test = Utterances(root_dir='assets/spmel', feat_dir='assets/raptf0', mode='train')
+    from hparams import hparams
+
+    # test = Utterances(root_dir='assets/spmel', feat_dir='assets/raptf0', mode='train')
+
+    data_load = get_loader(hparams)

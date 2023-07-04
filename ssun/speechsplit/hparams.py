@@ -20,6 +20,7 @@ hparams = HParams(
     skip_out_channels=256,
     cin_channels=80,
     gin_channels=-1,  # i.e., speaker embedding dim
+
     weight_normalization=True,
     n_speakers=-1,
     dropout=1 - 0.95,
