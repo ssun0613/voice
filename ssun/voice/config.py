@@ -3,7 +3,7 @@ import os
 
 def dataset_info(dataset_name):
     dataset_info = dict()
-    if  dataset_name == 'wm_811k':
+    if  dataset_name == 'speechsplit':
         dataset_info['dataset_path_train'] = '/storage/mskim/English_voice/train/'
         dataset_info['dataset_path_test'] = '/storage/mskim/English_voice/test/'
         dataset_info['dataset_path_make'] = '/storage/mskim/English_voice/make_dataset/'

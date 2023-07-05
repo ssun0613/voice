@@ -79,7 +79,7 @@ class accent_npy():
 
     def __getitem__(self, index):
         # make_datasave.py reference
-        # if index==0, mel_tmp.shape = (128, 226), mfcc_tmp.shape = (20, 226), pitch_tmp.shape = (452,)
+
         mel_tmp = np.load(self.dataset_mel[index % self.dataset_size])
         mfcc_tmp = np.load(self.dataset_mfcc[index % self.dataset_size])
         pitch_tmp = np.load(self.dataset_pitch[index % self.dataset_size])
@@ -137,11 +137,6 @@ class MyCollator(object):
         pitch = torch.from_numpy(np.stack(c, axis=0))
         len_org = torch.from_numpy(np.stack(d, axis=0))
 
-        # np.stack(a, axis=0).shape : (2, self.max_len_pad, mel_split), melsp.shape : torch.Size([2, self.max_len_pad, mel_split])
-        # np.stack(b, axis=0).shape : (2, 82), spk_emb.shape : torch.Size([2, 82])
-        # np.stack(c, axis=0).shape : (2, self.max_len_pad, 1), pitch.shape : torch.Size([2, 192, 1])
-        # np.stack(d, axis=0).shape : (2, ), len_org.shape : torch.Size([2])
-
         return melsp, spk_emb, pitch, len_org
 
 class MultiSampler(Sampler):
@@ -193,8 +188,8 @@ if __name__ == '__main__':
 
     dataset_path = "/storage/mskim/English_voice/"
 
-    # dataset_train = accent(dataset_path)
-    # data_voice, label = dataset_train.__getitem__(4567)
+    dataset_train = accent_npy(dataset_path)
+    mel_tmp, mfcc_tmp, pitch_tmp = dataset_train.__getitem__(4567)
 
 
 
