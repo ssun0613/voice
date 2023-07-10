@@ -26,6 +26,7 @@ def pySTFT(x, fft_length=1024, hop_length=256):
 
     return np.abs(result)
 
+
 def speaker_normalization(f0, index_nonzero, mean_f0, std_f0):
     # f0 is logf0
     f0 = f0.astype(float).copy()

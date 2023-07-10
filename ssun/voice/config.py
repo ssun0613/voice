@@ -1,57 +1,18 @@
 import argparse
 import os
 
-def dataset_info(dataset_name):
+def dataset_info(network_name):
     dataset_info = dict()
-    if  dataset_name == 'speechsplit':
+    if  network_name == 'speechsplit':
         dataset_info['dataset_path_train'] = '/storage/mskim/English_voice/train/'
         dataset_info['dataset_path_test'] = '/storage/mskim/English_voice/test/'
         dataset_info['dataset_path_make'] = '/storage/mskim/English_voice/make_dataset/'
 
-        dataset_info['freq'] = 8
-        dataset_info['dim_neck'] = 8
-        dataset_info['freq_2'] = 8
-        dataset_info['dim_neck_2'] = 1
-        dataset_info['freq_3'] = 8
-        dataset_info['dim_neck_3'] = 32
-        dataset_info['out_channels'] = 30
-        dataset_info['layers'] = 24
-        dataset_info['stacks'] = 4
-        dataset_info['residual_channels'] = 512
-        dataset_info['gate_channels'] = 512
-        dataset_info['skip_out_channels'] = 256
-        dataset_info['cin_channels'] = 8
-        dataset_info['gin_channels'] = 1
-
-        dataset_info['weight_normalization'] = True
-        dataset_info['n_speakers'] = 1
-        dataset_info['dropout'] = 0.05
-        dataset_info['kernel_size'] = 3
-        dataset_info['upsample_conditional_features'] = True
-        dataset_info['upsample_scales'] = [4, 4, 4, 4]
-        dataset_info['freq_axis_kernel_size'] = 3
-        dataset_info['legacy'] = True
-
-        dataset_info['dim_enc'] = 512
-        dataset_info['dim_enc_2'] = 128
-        dataset_info['dim_enc_3'] = 256
-
-        dataset_info['dim_freq'] = 80
-        dataset_info['dim_spk_emb'] = 82
-        dataset_info['dim_f0'] = 257
-        dataset_info['dim_dec'] = 512
-        dataset_info['len_raw'] = 128
-        dataset_info['chs_grp'] = 16
-
-        dataset_info['min_len_seg'] = 19
-        dataset_info['max_len_seg'] = 32
-        dataset_info['min_len_seq'] = 64
-        dataset_info['max_len_seq'] = 128
-        dataset_info['max_len_pad'] = 192
+        dataset_info['batch_size'] = 2
 
 
     else:
-        ValueError('There is no dataset named {}'.format(dataset_name))
+        ValueError('There is no dataset named {}'.format(network_name))
     return dataset_info
 
 
@@ -61,29 +22,20 @@ class Config:
     def __init__(self):
         self.parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-        self.parser.add_argument('--network_name', type=str, default='capsnet') # [ resnet | densenet | efficientnet | capsnet ]
-        self.parser.add_argument('--weight_name', type=str, default='capsnet') # [ resnet | densenet | efficientnet | capsnet ]
-        self.parser.add_argument('--dataset_name', type=str, default='multi')
+        self.parser.add_argument('--network_name', type=str, default='speechsplit')
+        self.parser.add_argument('--weight_name', type=str, default='speechsplit')
+        self.parser.add_argument('--dataset_name', type=str, default='dacon')
         self.parser.add_argument('--continue_train', type=bool, default=False)
         self.parser.add_argument('--epochs', type=int, default=20)
         #
         temp_parser, _ = self.parser.parse_known_args()
-        self.dataset_info = dataset_info(dataset_name=temp_parser.dataset_name)
+        self.dataset_info = dataset_info(network_name=temp_parser.network_name)
         #
         self.parser.add_argument('--batch_size', type=int, default=self.dataset_info['batch_size'])
         self.parser.add_argument('--dataset_path_train', type=str, default=self.dataset_info['dataset_path_train'])
         self.parser.add_argument('--dataset_path_test', type=str, default=self.dataset_info['dataset_path_test'])
-        self.parser.add_argument('--loss_name', type=str, default=self.dataset_info['loss_name'])
+        self.parser.add_argument('--dataset_path_make', type=str, default=self.dataset_info['dataset_path_make'])
 
-        self.parser.add_argument('--data_height', type=int, default=self.dataset_info['data_height'])
-        self.parser.add_argument('--data_width', type=int, default=self.dataset_info['data_width'])
-        self.parser.add_argument('--data_depth', type=int, default=self.dataset_info['data_depth'])
-
-        self.parser.add_argument('--in_dim', type=int, default=self.dataset_info['in_dim'])
-        self.parser.add_argument('--out_dim', type=int, default=self.dataset_info['out_dim'])
-        self.parser.add_argument('--out_channels', type=int, default=self.dataset_info['out_channels'])
-        self.parser.add_argument('--num_routing', type=int, default=self.dataset_info['num_routing'])
-        self.parser.add_argument('--threshold', type=float, default=self.dataset_info['threshold'])
         #####
         self.parser.add_argument('--scheduler_name', type=str, default='cosine', help='[stepLR | cycliclr | cosine]')
         self.parser.add_argument('--lr', type=float, default=1e-4)

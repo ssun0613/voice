@@ -68,9 +68,12 @@ class accent_npy():
         self.dataset_size = len(self.dataset_mel)
 
     def data_load_npy(self):
-        dataset_mel = sorted(glob.glob(self.dataset_dir + "make_dataset/make_mel/*.npy"))
-        dataset_mfcc = sorted(glob.glob(self.dataset_dir + "make_dataset/make_mfcc/*.npy"))
-        dataset_pitch = sorted(glob.glob(self.dataset_dir + "make_dataset/make_pitch/*.npy"))
+        # dataset_mel = sorted(glob.glob(self.dataset_dir + "make_dataset/make_mel/*.npy"))
+        # dataset_mfcc = sorted(glob.glob(self.dataset_dir + "make_dataset/make_mfcc/*.npy"))
+        # dataset_pitch = sorted(glob.glob(self.dataset_dir + "make_dataset/make_pitch/*.npy"))
+        dataset_mel = sorted(glob.glob(self.dataset_dir + "make_dataset/new/make_mel/*.npy"))
+        dataset_mfcc = sorted(glob.glob(self.dataset_dir + "make_dataset/new/make_mfcc/*.npy"))
+        dataset_pitch = sorted(glob.glob(self.dataset_dir + "make_dataset/new/make_pitch/*.npy"))
 
         return dataset_mel, dataset_mfcc, dataset_pitch
 
@@ -84,8 +87,8 @@ class accent_npy():
         mfcc_tmp = np.load(self.dataset_mfcc[index % self.dataset_size])
         pitch_tmp = np.load(self.dataset_pitch[index % self.dataset_size])
 
-        mel_tmp = mel_tmp[:,:self.mel_split]
-        mfcc_tmp = mfcc_tmp[:,:self.mel_split]
+        # mel_tmp = mel_tmp[:,:self.mel_split]
+        # mfcc_tmp = mfcc_tmp[:,:self.mel_split]
 
         return mel_tmp, mfcc_tmp, pitch_tmp
 
