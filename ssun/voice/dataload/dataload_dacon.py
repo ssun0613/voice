@@ -138,7 +138,7 @@ if __name__ == '__main__':
     dataset_path = "/storage/mskim/English_voice/"
 
     dataset_train = accent(dataset_path)
-    mel_tmp, mfcc_tmp, pitch_tmp = dataset_train.__getitem__(4567)
+    mel_tmp, mfcc_tmp, pitch_tmp = dataset_train.__getitem__(6578)
 
 
 
