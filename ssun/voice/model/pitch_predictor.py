@@ -11,7 +11,6 @@ class Conv_layer(nn.Module):
         x = x.contiguous().transpose(1, 2)
         x = self.Conv_layer(x)
         x = x.contiguous().transpose(1, 2)
-
         return x
 
 class VariancePredictor(nn.Module):
