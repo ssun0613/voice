@@ -15,10 +15,8 @@ class Conv_layer(nn.Module):
         return x
 
 class VariancePredictor(nn.Module):
-
     def __init__(self):
         super(VariancePredictor, self).__init__()
-
         self.VariancePredictor = nn.Sequential( Conv_layer(in_channels = 256, out_channels = 256, kernel_size = 3, stride = 1, padding = 1),
                                                 nn.ReLU(),
                                                 nn.LayerNorm(256),
