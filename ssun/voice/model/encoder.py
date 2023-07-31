@@ -16,7 +16,7 @@ class Conv_layer(nn.Module):
 
 class Er(nn.Module):
     def __init__(self):
-        super(Er).__init__()
+        super(Er, self).__init__()
 
         self.conv_r = nn.Sequential(Conv_layer(in_channels = 8, out_channels = 128, kernel_size=5, stride=1, padding=2, dilation=1),
                                     nn.GroupNorm(num_groups = 8, num_channels = 128))
@@ -41,7 +41,7 @@ class Er(nn.Module):
 
 class Ec_Ef(nn.Module):
     def __init__(self):
-        super(Ec_Ef).__init__()
+        super(Ec_Ef, self).__init__()
         # Ec architecture
         self.conv_c = nn.Sequential(Conv_layer(in_channels = 8, out_channels = 512, kernel_size=5, stride=1, padding=2, dilation=1),
                                     Conv_layer(in_channels = 512, out_channels = 512, kernel_size=5, stride=1, padding=2, dilation=1),

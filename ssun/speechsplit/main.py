@@ -5,8 +5,8 @@ import argparse
 from torch.backends import cudnn
 
 from solver import Solver
-# from data_loader_ssun import get_loader
-from ssun.voice.dataload.dataload_dacon import get_loader
+from data_loader_ssun import get_loader
+# from ssun.voice.dataload.dataload_dacon import get_loader
 from hparams import hparams
 
 
@@ -27,8 +27,8 @@ def main(config):
         os.makedirs(config.sample_dir)
 
     # Data loader.
-    # vcc_loader = get_loader(hparams)
-    vcc_loader = get_loader()
+    vcc_loader = get_loader(hparams)
+    # vcc_loader = get_loader()
 
     # Solver for training
     solver = Solver(vcc_loader, config, hparams)
