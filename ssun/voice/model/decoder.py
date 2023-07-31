@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class Decoder(nn.Module):
+class Decoder_s(nn.Module):
     def __init__(self):
-        super(Decoder).__init__()
+        super(Decoder_s).__init__()
         self.lstm_d = nn.LSTM(input_size = 164, hidden_size = 512, num_layers = 3, batch_first=True, bidirectional=True)
         self.linear = nn.Linear(1024, 80, bias=True)
 
