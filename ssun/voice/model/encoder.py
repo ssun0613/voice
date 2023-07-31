@@ -175,6 +175,5 @@ class InterpLnr(nn.Module):
 if __name__ == '__main__':
     model = Ec_Ef()
     model.init_weights()
-    x = torch.rand(1, 3, 52, 52)
-    model.set_input(x)
-    model.forward()
+    x = torch.rand(2,337,192)
+    model.forward(x)
