@@ -91,6 +91,20 @@ class Ec_Ef(nn.Module):
 
         return codes_c, codes_f
 
+    def init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+                import scipy.stats as stats
+                stddev = m.stddev if hasattr(m, 'stddev') else 0.1
+                X = stats.truncnorm(-2, 2, scale=stddev)
+                values = torch.as_tensor(X.rvs(m.weight.numel()), dtype=m.weight.dtype)
+                values = values.view(m.weight.size())
+                with torch.no_grad():
+                    m.weight.copy_(values)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
 class InterpLnr(nn.Module):
     def __init__(self):
         super().__init__()
@@ -156,3 +170,11 @@ class InterpLnr(nn.Module):
         seq_padded = self.pad_sequences(sequences) # seq_padded.shape : torch.Size([2, 192, 81])
 
         return seq_padded
+
+
+if __name__ == '__main__':
+    model = Ec_Ef()
+    model.init_weights()
+    x = torch.rand(1, 3, 52, 52)
+    model.set_input(x)
+    model.forward()
