@@ -171,7 +171,6 @@ class InterpLnr(nn.Module):
 
         return seq_padded
 
-
 if __name__ == '__main__':
     model = Ec_Ef()
     model.init_weights()
