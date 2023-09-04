@@ -1,3 +1,6 @@
+import sys, os
+sys.path.append("..")
+
 import torch
 import torch.nn as nn
 import numpy as np
@@ -90,7 +93,7 @@ if __name__=="__main__":
 
     mel_masks = (get_mask_from_lengths(mel_lens, max_mel_len) if mel_lens is not None else None)
 
-    output = torch.rand([1, 611, 256], device='cuda:0', grad_fn=<StackBackward0>)
+    output = torch.rand([1, 611, 256], device='cuda:0')
 
     output, mel_masks = Decoder(output, mel_masks )
 
