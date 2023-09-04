@@ -8,6 +8,8 @@ import numpy as np
 from decoder_f_sub import FFTBlock
 from text.symbols import symbols
 
+device = torch.device("cpu")
+
 def get_mask_from_lengths(lengths, max_len=None): # src_lens --> lengths, max_src_len --> max_len
     batch_size = lengths.shape[0]
     if max_len is None:
@@ -39,7 +41,7 @@ def get_sinusoid_encoding_table(n_position, d_hid, padding_idx=None):
 
 class Decoder(nn.Module):
     """ Decoder """
-    def __init__(self, config):
+    def __init__(self):
         super(Decoder, self).__init__()
 
         n_position = 1001 # config["max_seq_len"] + 1
@@ -76,7 +78,7 @@ class Decoder(nn.Module):
 
             # -- Prepare masks
             slf_attn_mask = mask.unsqueeze(1).expand(-1, max_len, -1)
-            dec_output = enc_seq[:, :max_len, :] + self.position_enc[:, :max_len, :].expand(batch_size, -1, -1)
+            dec_output = enc_seq[:, :max_len, :] + self.position_enc[:, :max_len, :].expand(batch_size, -1, -1).to(device)
             mask = mask[:, :max_len]
             slf_attn_mask = slf_attn_mask[:, :, :max_len]
 
@@ -88,14 +90,16 @@ class Decoder(nn.Module):
         return dec_output, mask
 
 if __name__=="__main__":
-    mel_lens = torch.tensor([611], device='cuda:0')
+
+    model = Decoder()
+    mel_lens = torch.tensor([611], device='cpu')
     max_mel_len = 611
 
     mel_masks = (get_mask_from_lengths(mel_lens, max_mel_len) if mel_lens is not None else None)
 
-    output = torch.rand([1, 611, 256], device='cuda:0')
+    output = torch.rand([1, 611, 256], device='cpu')
 
-    output, mel_masks = Decoder(output, mel_masks )
+    output, mel_masks = model.forward(output, mel_masks)
 
 
 

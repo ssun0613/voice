@@ -11,6 +11,7 @@ class ScaledDotProductAttention(nn.Module):
         super().__init__()
         self.temperature = temperature
         self.softmax = nn.Softmax(dim=2)
+
     def forward(self, q, k, v, mask=None):
         attn = torch.bmm(q, k.transpose(1, 2))
         attn = attn / self.temperature
@@ -20,6 +21,7 @@ class ScaledDotProductAttention(nn.Module):
         output = torch.bmm(attn, v)
 
         return output, attn
+
 class MultiHeadAttention(nn.Module):
     """ Multi-Head Attention module """
     def __init__(self, n_head, d_model, d_k, d_v, dropout=0.1):
@@ -65,7 +67,6 @@ class MultiHeadAttention(nn.Module):
 
         return output, attn
 
-
 class PositionwiseFeedForward(nn.Module):
     """ A two-feed-forward-layer module """
     def __init__(self, d_in, d_hid, kernel_size, dropout=0.1):
@@ -89,12 +90,14 @@ class PositionwiseFeedForward(nn.Module):
         output = self.layer_norm(output + residual)
 
         return output
+
 class FFTBlock(torch.nn.Module):
     """ FFT Block """
     def __init__(self, d_model, n_head, d_k, d_v, d_inner, kernel_size, dropout=0.1):
         super(FFTBlock, self).__init__()
         self.slf_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
         self.pos_ffn = PositionwiseFeedForward(d_model, d_inner, kernel_size, dropout=dropout)
+
     def forward(self, enc_input, mask=None, slf_attn_mask=None):
         enc_output, enc_slf_attn = self.slf_attn(enc_input, enc_input, enc_input, mask=slf_attn_mask)
         enc_output = enc_output.masked_fill(mask.unsqueeze(-1), 0)
@@ -104,7 +107,6 @@ class FFTBlock(torch.nn.Module):
 
         return enc_output, enc_slf_attn
 
-
 class ConvNorm(torch.nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=None, dilation=1, bias=True, w_init_gain="linear"):
         super(ConvNorm, self).__init__()
@@ -113,11 +115,11 @@ class ConvNorm(torch.nn.Module):
             padding = int(dilation * (kernel_size - 1) / 2)
 
         self.conv = torch.nn.Conv1d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
+
     def forward(self, signal):
         conv_signal = self.conv(signal)
 
         return conv_signal
-
 
 class PostNet(nn.Module):
     """ PostNet: Five 1-d convolution with 512 channels and kernel size 5 """

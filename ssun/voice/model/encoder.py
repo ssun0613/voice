@@ -39,71 +39,35 @@ class Er(nn.Module):
 
         return codes_r
 
-class Ec_Ef(nn.Module):
+class Ec(nn.Module):
     def __init__(self):
-        super(Ec_Ef, self).__init__()
+        super(Ec, self).__init__()
+        self.register_buffer('len_org', torch.tensor(192))
         # Ec architecture
-        self.conv_c = nn.Sequential(Conv_layer(in_channels = 8, out_channels = 512, kernel_size=5, stride=1, padding=2, dilation=1),
+        self.conv_c = nn.Sequential(Conv_layer(in_channels = 80, out_channels = 512, kernel_size=5, stride=1, padding=2, dilation=1),
                                     Conv_layer(in_channels = 512, out_channels = 512, kernel_size=5, stride=1, padding=2, dilation=1),
                                     Conv_layer(in_channels = 512, out_channels = 512, kernel_size=5, stride=1, padding=2, dilation=1),
                                     nn.GroupNorm(num_groups = 32, num_channels = 512))
         self.lstm_c = nn.LSTM(input_size = 512, hidden_size = 8, num_layers = 1, batch_first=True, bidirectional=True)
 
-        # Ef architecture
-        self.conv_f = nn.Sequential(Conv_layer(in_channels = 257, out_channels = 256, kernel_size=5, stride=1, padding=2, dilation=1),
-                                    Conv_layer(in_channels = 256, out_channels = 256, kernel_size=5, stride=1, padding=2, dilation=1),
-                                    Conv_layer(in_channels = 256, out_channels = 256, kernel_size=5, stride=1, padding=2, dilation=1),
-                                    nn.GroupNorm(num_groups = 16, num_channels = 256))
-        self.lstm_f = nn.LSTM(input_size = 256, hidden_size = 32,  num_layers = 1, batch_first=True, bidirectional=True)
-
         self.interp = InterpLnr()
 
-    def forward(self, c_f):
-        c = c_f[:, :8, :]
-        f = c_f[:, 8:, :]
-
-        for conv_c, conv_f in zip(self.conv_c, self.conv_f):
+    def forward(self, c):
+        for conv_c in self.conv_c:
             c = F.relu(conv_c(c))
-            f = F.relu(conv_f(f))
+            c = c.transpose(1, 2)
+            c = self.interp(c, self.len_org.expand(c.size(0)))
+            c = c.transpose(1, 2)
 
-            c_f = torch.cat((c, f), dim=1).transpose(1, 2)
-            c_f = self.interp(c_f, self.len_org.expand(c.size(0)))
-            c_f = c_f.transpose(1, 2)
-            c = c_f[:, :512, :]
-            f = c_f[:, 512:, :]
-            print('end')
-
-        c_f = c_f.transpose(1, 2)
-        c = c_f[:, :, :512]
-        f = c_f[:, :, 512:]
-
+        c = c.transpose(1, 2)
         c = self.lstm_c(c)[0]
-        f = self.lstm_f(f)[0]
 
         c_forward = c[:, :, :8]
         c_backward = c[:, :, 8:]
 
-        f_forward = f[:, :, :32]
-        f_backward = f[:, :, 32:]
+        codes_c = torch.cat((c_forward[:, 7::8, :], c_backward[:, ::8, :]), dim=-1) # codes_c.shape : torch.Size([2, 24, 16])
 
-        codes_c = torch.cat((c_forward[:, 7::8, :], c_backward[:, ::8, :]), dim=-1)
-        codes_f = torch.cat((f_forward[:, 7::8, :], f_backward[:, ::8, :]), dim=-1)
-
-        return codes_c, codes_f
-
-    def init_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
-                import scipy.stats as stats
-                stddev = m.stddev if hasattr(m, 'stddev') else 0.1
-                X = stats.truncnorm(-2, 2, scale=stddev)
-                values = torch.as_tensor(X.rvs(m.weight.numel()), dtype=m.weight.dtype)
-                values = values.view(m.weight.size())
-                with torch.no_grad():
-                    m.weight.copy_(values)
-            elif isinstance(m, nn.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
+        return codes_c
 
 class InterpLnr(nn.Module):
     def __init__(self):
@@ -172,7 +136,6 @@ class InterpLnr(nn.Module):
         return seq_padded
 
 if __name__ == '__main__':
-    model = Ec_Ef()
-    model.init_weights()
-    x = torch.rand(2,337,192)
+    model = Ec()
+    x = torch.rand(2, 192, 80).transpose(2, 1)
     model.forward(x)
