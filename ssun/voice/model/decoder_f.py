@@ -90,7 +90,6 @@ class Decoder(nn.Module):
         return dec_output, mask
 
 if __name__=="__main__":
-
     model = Decoder()
     mel_lens = torch.tensor([611], device='cpu')
     max_mel_len = 611
