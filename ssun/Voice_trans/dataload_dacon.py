@@ -15,9 +15,6 @@ class accent():
         self.dataset_size = len(self.dataset_mel)
 
     def data_load_npy(self):
-        # dataset_mel = sorted(glob.glob(self.dataset_dir + "make_dataset/make_mel/*.npy"))
-        # dataset_mfcc = sorted(glob.glob(self.dataset_dir + "make_dataset/make_mfcc/*.npy"))
-        # dataset_pitch = sorted(glob.glob(self.dataset_dir + "make_dataset/make_pitch/*.npy"))
         dataset_mel = sorted(glob.glob(self.dataset_dir + "make_dataset/new/make_mel/*.npy"))
         dataset_mfcc = sorted(glob.glob(self.dataset_dir + "make_dataset/new/make_mfcc/*.npy"))
         dataset_pitch = sorted(glob.glob(self.dataset_dir + "make_dataset/new/make_pitch/*.npy"))
@@ -135,7 +132,7 @@ if __name__ == '__main__':
     dataset_path = "/storage/mskim/English_voice/"
 
     dataset_train = accent(dataset_path)
-    mel_tmp, mfcc_tmp, pitch_tmp = dataset_train.__getitem__(6578)
+    mel_tmp, mfcc_tmp, pitch_tmp , sp_id= dataset_train.__getitem__(6578)
 
 
 
