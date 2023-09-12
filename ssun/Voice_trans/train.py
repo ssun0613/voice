@@ -13,7 +13,6 @@ from config import Config
 from model.voice_trans import voice_trans as network
 
 def setup(opt):
-
     #-------------------------------------------- setup device --------------------------------------------
 
     if len(opt.gpu_id) != 0:
@@ -24,10 +23,6 @@ def setup(opt):
     # -------------------------------------------- setup network --------------------------------------------
 
     net = network().to(device)
-    # if not opt.continue_train:
-    #     net.init_weights()
-    # else:
-    #     net = net.load_networks(net=net, loss_type=opt.loss_name, weight_path=opt.save_path + '/', device=device)
 
     # -------------------------------------------- setup dataload --------------------------------------------
 
