@@ -28,7 +28,7 @@ class voice_trans(nn.Module):
 
         r_c_s = torch.cat((rhythm, content,sp_id.unsqueeze(1).expand(-1, voice.transpose(2,1).size(-1), -1)), dim=-1)
 
-        pitch_p, pitch_embedding = self.P(r_c_s.transpose(2,1))
+        pitch_p, pitch_embedding = self.P(r_c_s)
 
         r_c_p = torch.cat((rhythm, content, pitch_embedding), dim=-1)
 
