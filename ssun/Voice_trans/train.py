@@ -7,7 +7,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import lr_scheduler
-from tqdm import tqdm
 
 from config import Config
 from model.voice_trans import voice_trans as network
