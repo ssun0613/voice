@@ -49,25 +49,19 @@ class MyCollator(object):
         self.max_len_pad = 192
 
     def __call__(self, batch):
-        # batch[i] is a tuple of __getitem__ outputs
-        # batch[i][mel_tmp, mfcc_tmp, pitch_tmp, sp_id]
         new_batch = []
         for token in batch:
             mel, mfcc, pitch, sp_id = token
-            len_crop = np.random.randint(self.min_len_seq, self.max_len_seq + 1, size=2)  # 1.5s ~ 3s
-            # np.random.randint --> self.min_len_seq ~ self.max_len_seq + 1
+            len_crop = np.random.randint(self.min_len_seq, self.max_len_seq + 1, size=2)
             left = np.random.randint(0, len(mel) - len_crop[0], size=2)
-            # pdb.set_trace()
 
-            mel_crop = mel[left[0]:left[0] + len_crop[0], :] # mel_crop.shape : (len_crop[0], mel_tmp.shape[2])
+            mel_crop = mel[left[0]:left[0] + len_crop[0], :]
             mfcc_crop = mfcc[left[0]:left[0] + len_crop[0], :]
-            pitch_crop = pitch[left[0]:left[0] + len_crop[0]] # pitch_crop.shape : (len_crop[0],)
+            pitch_crop = pitch[left[0]:left[0] + len_crop[0]]
 
-            mel_clip = np.clip(mel_crop, 0, 1) # mel_clip.shape : (len_crop[0], mel_tmp.shape[2])
+            mel_clip = np.clip(mel_crop, 0, 1)
             mfcc_clip = np.clip(mfcc_crop, 0, 1)
 
-            # mel_pad.shape : (self.max_len_pad, mel_tmp.shape[2])
-            # pitch_pad.shape : (self.max_len_pad, 1)
             mel_pad = np.pad(mel_clip, ((0, self.max_len_pad - mel_clip.shape[0]), (0, 0)), 'constant')
             mfcc_pad = np.pad(mfcc_clip, ((0, self.max_len_pad - mfcc_clip.shape[0]), (0, 0)), 'constant')
             pitch_pad = np.pad(pitch_crop[:, np.newaxis], ((0, self.max_len_pad - pitch_crop.shape[0]), (0, 0)), 'constant', constant_values=-1e10)
@@ -76,8 +70,6 @@ class MyCollator(object):
 
         batch = new_batch
 
-        # len(a)=2, a[0].shape : (self.max_len_pad, mel_tmp.shape[2]) | len(b)=2, b[0].shape : (mfcc_tmp.shape[0], mfcc_tmp.shape[1])
-        # len(c)=2, c[0].shape : (self.max_len_pad, 1) | len(d)=2, d[0]=len_crop[0]
         a, b, c, d, e = zip(*batch)
 
         melsp = torch.from_numpy(np.stack(a, axis=0))
