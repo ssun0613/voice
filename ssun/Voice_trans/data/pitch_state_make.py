@@ -44,29 +44,21 @@ if __name__=='__main__':
 
         if data_wav.shape[0] % 256 ==0:
             data_wav=np.concatenate((data_wav, np.array([1e-6])), axis=0)
-
         # make and save pitch cont
         data_filt = signal.filtfilt(b, a, data_wav)
 
         seed = RandomState(int(data.split('/')[-1].split('_')[-1][:-4]))
         wav = data_filt * 0.96 + (seed.rand(data_filt.shape[0]) - 0.5) * 1e-06
-
         pitch = sptk.rapt(wav.astype(np.float32) * 32768, fs, hopsize=256, min=lo, max=hi, otype='pitch')
 
         if len(pitch>0):
             pitch_scaler.partial_fit(pitch.reshape((-1,1)))
-
         np.save(path + 'new/make_pitch(only_pitch)/{}_{}'.format(data.split('/')[-2], data.split('/')[-1][:-4]), pitch.astype(np.float32), allow_pickle=False)
-
-    print("make_pitch(only_pitch) save\n")
 
     pitch_mean = pitch_scaler.mean_[0]
     pitch_std = pitch_scaler.scale_[0]
-
     pitch_min, pitch_max = normalize(os.path.join(path, "new/make_pitch(only_pitch)"), pitch_mean, pitch_std)
 
     stats = {"pitch_min": float(pitch_min), "pitch_max": float(pitch_max), "pitch_mean": float(pitch_mean), "pitch_std": float(pitch_std)}
-
     np.save(path + 'new/pitch_state.npy',stats)
-    print("pitch_state.npy save\n")
 
