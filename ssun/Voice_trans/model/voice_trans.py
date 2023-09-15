@@ -40,7 +40,7 @@ class voice_trans(nn.Module):
         r_c_p = torch.cat((rhythm_repeat, content_repeat, pitch_embedding), dim=-1)
         mel_output = self.Ds(r_c_p)
 
-        rhythm_l = self.Er(mel_output.transpose(2, 1))
-        content_l = self.Ec(mel_output.transpose(2, 1))
+        rhythm_l = self.Er(mel_output.transpose(2, 1)) # used to calculate rhythm reconstruction loss
+        content_l = self.Ec(mel_output.transpose(2, 1)) # used to calculate content reconstruction loss
 
         return mel_output, pitch_p, rhythm, content, rhythm_l, content_l
