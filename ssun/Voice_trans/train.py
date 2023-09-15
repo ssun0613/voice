@@ -1,11 +1,8 @@
-import os
 import sys
 sys.path.append("..")
 
-import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.optim import lr_scheduler
 
 from config import Config
@@ -21,11 +18,14 @@ def setup(opt):
 
     # -------------------------------------------- setup network --------------------------------------------
 
-    net = network().to(device)
+    net = network(opt).to(device)
 
     # -------------------------------------------- setup dataload --------------------------------------------
 
-    from dataload_dacon import get_loader
+    if not opt.debugging:
+        from ssun.Voice_trans.data.dataload_dacon import get_loader
+    else:
+        from Voice_trans.data.dataload_dacon import get_loader
     dataload = get_loader(opt)
 
     # -------------------------------------------- setup optimizer --------------------------------------------
@@ -54,7 +54,11 @@ def setup(opt):
 
 if __name__ == "__main__":
     config = Config()
+    config.print_options()
     device, net, dataload, optimizer, scheduler = setup(config.opt)
+
+    loss_m = nn.MSELoss()
+    loss_l = nn.L1Loss()
 
     for curr_epoch in range(config.opt.epochs):
         print("-------------------------- Epoch : {} --------------------------".format(curr_epoch+1))
@@ -62,6 +66,30 @@ if __name__ == "__main__":
 
             # data : melsp, mfcc, pitch, len_org, sp_id
             voice = data['melsp'].to(device)
+            pitch_t = data['pitch'].to(device)
             sp_id = data['sp_id'].to(device)
 
-            mel_output = net.forward(voice, sp_id)
+            mel_output, pitch_p, rhythm, content, rhythm_l, content_l = net.forward(voice, sp_id)
+
+            voice_loss = loss_m(voice, mel_output)
+            rhythm_loss = loss_l(rhythm, rhythm_l)
+            content_loss = loss_l(content, content_l)
+
+            recon_loss = voice_loss + (config.opt.lambda_r * rhythm_loss) + (config.opt.lambda_c * content_loss)
+            pitch_loss = loss_m(pitch_t, pitch_p)
+
+            total_loss = recon_loss + pitch_loss
+
+            optimizer.zero_grad()
+            # recon_loss.backward()
+            # pitch_loss.backward()
+            total_loss.backward()
+            optimizer.step()
+
+
+        scheduler.step()
+        torch.save({'net': net.state_dict(), 'optimizer': optimizer.state_dict()}, config.opt.save_path +"{}.pth".format(curr_epoch+1))
+        print("voice_loss : {:.5f} rhythm_loss : {:.5f} content_loss : {:.5f} recon_loss : {:.5f}\n".format(voice_loss, rhythm_loss, content_loss, recon_loss))
+        print("pitch_loss : %.5lf\n" % pitch_loss)
+        print("total_loss : %.5lf\n" % total_loss)
+        print("Learning rate : %.5f\n" % optimizer.param_groups[0]['lr'])

@@ -17,7 +17,7 @@ class accent():
     def data_load_npy(self):
         dataset_mel = sorted(glob.glob(self.dataset_dir + "make_dataset/new/make_mel/*.npy"))
         dataset_mfcc = sorted(glob.glob(self.dataset_dir + "make_dataset/new/make_mfcc/*.npy"))
-        dataset_pitch = sorted(glob.glob(self.dataset_dir + "make_dataset/new/make_pitch/*.npy"))
+        dataset_pitch = sorted(glob.glob(self.dataset_dir + "make_dataset/new/make_pitch(only_pitch)/*.npy")) # make_pitch(only_pitch)
 
         return dataset_mel, dataset_mfcc, dataset_pitch
 
