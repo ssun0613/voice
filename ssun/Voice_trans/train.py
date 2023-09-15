@@ -86,7 +86,6 @@ if __name__ == "__main__":
             total_loss.backward()
             optimizer.step()
 
-
         scheduler.step()
         torch.save({'net': net.state_dict(), 'optimizer': optimizer.state_dict()}, config.opt.save_path +"{}.pth".format(curr_epoch+1))
         print("voice_loss : {:.5f} rhythm_loss : {:.5f} content_loss : {:.5f} recon_loss : {:.5f}\n".format(voice_loss, rhythm_loss, content_loss, recon_loss))
