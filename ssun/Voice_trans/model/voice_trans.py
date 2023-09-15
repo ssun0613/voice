@@ -7,7 +7,6 @@ import torch.nn as nn
 class voice_trans(nn.Module):
     def __init__(self, opt):
         super(voice_trans,self).__init__()
-
         if not opt.debugging:
             from ssun.Voice_trans.model.encoder import Er, Ec
             from ssun.Voice_trans.model.decoder_s import Decoder_s as Ds
@@ -21,10 +20,8 @@ class voice_trans(nn.Module):
 
         self.Er = Er()
         self.Ec = Ec()
-
         self.Ds = Ds()
         # self.Df = Df()
-
         self.P = P()
 
     def forward(self, voice, sp_id):
