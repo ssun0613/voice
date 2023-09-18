@@ -101,7 +101,6 @@ if __name__ == "__main__":
                 writer.add_images('mel-spectrogram/voice_target', voice.transpose(1, 2).unsqueeze(dim=1), global_step=batch_id, dataformats='NCHW')
                 writer.add_images('mel-spectrogram/voice_prediction', mel_output.transpose(1, 2).unsqueeze(dim=1), global_step=batch_id, dataformats='NCHW')
 
-
         scheduler.step()
         writer.close()
         # torch.save({'net': net.state_dict(), 'optimizer': optimizer.state_dict()}, config.opt.save_path +"{}.pth".format(curr_epoch+1))
