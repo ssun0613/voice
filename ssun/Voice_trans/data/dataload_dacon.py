@@ -29,7 +29,6 @@ class accent():
         mel_tmp = np.load(self.dataset_mel[index % self.dataset_size])
         mfcc_tmp = np.load(self.dataset_mfcc[index % self.dataset_size])
         pitch_tmp = np.load(self.dataset_pitch[index % self.dataset_size])
-
         sp_id = self.data_sp_id(self.dataset_mel[index % self.dataset_size])
 
         return mel_tmp, mfcc_tmp, pitch_tmp, sp_id
@@ -64,7 +63,7 @@ class MyCollator(object):
 
             mel_pad = np.pad(mel_clip, ((0, self.max_len_pad - mel_clip.shape[0]), (0, 0)), 'constant')
             mfcc_pad = np.pad(mfcc_clip, ((0, self.max_len_pad - mfcc_clip.shape[0]), (0, 0)), 'constant')
-            pitch_pad = np.pad(pitch_crop[:, np.newaxis], ((0, self.max_len_pad - pitch_crop.shape[0]), (0, 0)), 'constant', constant_values=-1e10)
+            pitch_pad = np.pad(pitch_crop[:, np.newaxis], ((0, self.max_len_pad - pitch_crop.shape[0]), (0, 0)), 'constant')
 
             new_batch.append((mel_pad, mfcc_pad, pitch_pad, len_crop[0], sp_id))
 
