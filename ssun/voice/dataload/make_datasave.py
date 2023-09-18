@@ -54,18 +54,6 @@ if __name__=='__main__':
         if data_wav.shape[0] % 256 ==0:
             data_wav=np.concatenate((data_wav, np.array([1e-6])), axis=0)
 
-        # # -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        # # make and save mel-spectrogram
-        # data_voice_mel = librosa.feature.melspectrogram(y=data_wav, sr=data_sr, hop_length=160, n_mels=512)
-        # np.save(path + 'make_mel/{}_{}'.format(data.split('/')[-2], data.split('/')[-1][:-4]), data_voice_mel.astype(np.float32), allow_pickle=False)
-        #
-        # # -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        # # make and save mfcc
-        # data_voice_mel_s = librosa.power_to_db(data_voice_mel, ref=np.max)
-        # data_voice = librosa.feature.mfcc(S=data_voice_mel_s, sr=data_sr, hop_length=160, n_mfcc=100, n_fft=400)
-        # np.save(path + 'make_mfcc/{}_{}'.format(data.split('/')[-2], data.split('/')[-1][:-4]), data_voice.astype(np.float32), allow_pickle=False)
-
-        # -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         # make and save pitch cont
         data_filt = signal.filtfilt(b, a, data_wav)
 

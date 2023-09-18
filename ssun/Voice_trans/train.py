@@ -8,6 +8,15 @@ from torch.optim import lr_scheduler
 from config import Config
 from model.voice_trans import voice_trans as network
 
+from torch.utils.tensorboard import SummaryWriter
+import tensorflow as tf
+
+import io
+import numpy as np
+import librosa
+import librosa.display
+import matplotlib.pyplot as plt
+
 def setup(opt):
     #-------------------------------------------- setup device --------------------------------------------
 
@@ -52,8 +61,10 @@ def setup(opt):
 
     return device, net, dataload, optimizer, scheduler
 
+
 if __name__ == "__main__":
     config = Config()
+    writer = SummaryWriter()
     config.print_options()
     device, net, dataload, optimizer, scheduler = setup(config.opt)
 
@@ -61,8 +72,10 @@ if __name__ == "__main__":
     loss_l = nn.L1Loss()
 
     for curr_epoch in range(config.opt.epochs):
+        step = 0
         print("-------------------------- Epoch : {} --------------------------".format(curr_epoch+1))
         for batch_id, data in enumerate(dataload, 1):
+            step +=1
 
             # data : melsp, mfcc, pitch, len_org, sp_id
             voice = data['melsp'].to(device)
@@ -81,14 +94,25 @@ if __name__ == "__main__":
             total_loss = recon_loss + pitch_loss
 
             optimizer.zero_grad()
-            # recon_loss.backward()
-            # pitch_loss.backward()
             total_loss.backward()
             optimizer.step()
 
+            if step % 200 ==0:
+
+                writer.add_images('mel-spectrogram/voice_target', voice.transpose(1, 2).unsqueeze(dim=1), global_step=batch_id, dataformats='NCHW')
+                writer.add_images('mel-spectrogram/voice_prediction', mel_output.transpose(1, 2).unsqueeze(dim=1), global_step=batch_id, dataformats='NCHW')
+
+
         scheduler.step()
-        torch.save({'net': net.state_dict(), 'optimizer': optimizer.state_dict()}, config.opt.save_path +"{}.pth".format(curr_epoch+1))
+        writer.close()
+        # torch.save({'net': net.state_dict(), 'optimizer': optimizer.state_dict()}, config.opt.save_path +"{}.pth".format(curr_epoch+1))
         print("voice_loss : {:.5f} rhythm_loss : {:.5f} content_loss : {:.5f} recon_loss : {:.5f}\n".format(voice_loss, rhythm_loss, content_loss, recon_loss))
         print("pitch_loss : %.5lf\n" % pitch_loss)
         print("total_loss : %.5lf\n" % total_loss)
         print("Learning rate : %.5f\n" % optimizer.param_groups[0]['lr'])
+# writer.add_image('melspectrogram/voice_t', voice[0].transpose(0,1).unsqueeze(dim=0), global_step=batch_id, dataformats='CHW')
+# writer.add_image('melspectrogram/voice_p', mel_output[0].transpose(0,1).unsqueeze(dim=0), global_step=batch_id, dataformats='CHW')
+# writer.add_histogram('melspectrogram/voice_t', voice, global_step=batch_id)
+# writer.add_histogram('melspectrogram/voice_p', mel_output, global_step=batch_id)
+# print("tensorboard summary writer\n" )
+

@@ -9,26 +9,39 @@ class Conv_layer(nn.Module):
         self.Conv_layer = nn.Conv1d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
 
     def forward(self, x):
-        out = self.Conv_layer(x.transpose(1, 2).to(x.device).float())
+        x = x.contiguous().transpose(1,2).to(x.device).float()
+        out = self.Conv_layer(x)
+        out = out.contiguous().transpose(1, 2)
 
-        return out.transpose(1, 2)
+        return out
 
 class pitch_predictor(nn.Module):
     def __init__(self):
         super(pitch_predictor, self).__init__()
-        self.pitch_predicton = nn.Sequential( Conv_layer(in_channels = 24, out_channels = 128, kernel_size = 3, stride = 1, padding = 1),
+        # self.pitch_predicton = nn.Sequential( Conv_layer(in_channels = 24, out_channels = 128, kernel_size = 3, stride = 1, padding = 1),
+        #                                       nn.ReLU(),
+        #                                       nn.LayerNorm(128),
+        #                                       nn.Dropout(0.5),
+        #                                       Conv_layer(in_channels = 128, out_channels = 256, kernel_size = 3, stride = 1, padding = 1),
+        #                                       nn.ReLU(),
+        #                                       nn.LayerNorm(256),
+        #                                       nn.Dropout(0.5),
+        #                                       nn.Linear(256, 1))
+
+        self.pitch_predicton = nn.Sequential( Conv_layer(in_channels = 24, out_channels = 64, kernel_size = 3, stride = 1, padding = 1),
                                               nn.ReLU(),
-                                              nn.LayerNorm(128),
+                                              nn.LayerNorm(64),
                                               nn.Dropout(0.5),
-                                              Conv_layer(in_channels = 128, out_channels = 256, kernel_size = 3, stride = 1, padding = 1),
+                                              Conv_layer(in_channels=64, out_channels=64, kernel_size=3, stride=1,padding=1),
                                               nn.ReLU(),
-                                              nn.LayerNorm(256),
+                                              nn.LayerNorm(64),
                                               nn.Dropout(0.5),
-                                              nn.Linear(256, 1))
-        n_bins = 256
+                                              nn.Linear(64, 1))
+
+        n_bins = 64
         pitch_state = np.load('/storage/mskim/English_voice/make_dataset/new/pitch_state.npy',allow_pickle=True ).tolist()
         self.pitch_bins = nn.Parameter(torch.linspace(pitch_state['pitch_min'], pitch_state['pitch_max'], n_bins - 1), requires_grad=False)
-        self.pitch_embedding = nn.Embedding(256, 256)
+        self.pitch_embedding = nn.Embedding(64, 64)
 
     def forward(self, r_c_s):
         out = self.pitch_predicton(r_c_s)
