@@ -98,7 +98,6 @@ if __name__ == "__main__":
             optimizer.step()
 
             if step % 200 ==0:
-
                 writer.add_images('mel-spectrogram/voice_target', voice.transpose(1, 2).unsqueeze(dim=1), global_step=batch_id, dataformats='NCHW')
                 writer.add_images('mel-spectrogram/voice_prediction', mel_output.transpose(1, 2).unsqueeze(dim=1), global_step=batch_id, dataformats='NCHW')
 
@@ -110,9 +109,5 @@ if __name__ == "__main__":
         print("pitch_loss : %.5lf\n" % pitch_loss)
         print("total_loss : %.5lf\n" % total_loss)
         print("Learning rate : %.5f\n" % optimizer.param_groups[0]['lr'])
-# writer.add_image('melspectrogram/voice_t', voice[0].transpose(0,1).unsqueeze(dim=0), global_step=batch_id, dataformats='CHW')
-# writer.add_image('melspectrogram/voice_p', mel_output[0].transpose(0,1).unsqueeze(dim=0), global_step=batch_id, dataformats='CHW')
-# writer.add_histogram('melspectrogram/voice_t', voice, global_step=batch_id)
-# writer.add_histogram('melspectrogram/voice_p', mel_output, global_step=batch_id)
-# print("tensorboard summary writer\n" )
+
 
