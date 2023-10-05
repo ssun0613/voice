@@ -7,9 +7,10 @@ def dataset_info(network_name):
         dataset_info['dataset_path_train'] = '/storage/mskim/English_voice/train/'
         dataset_info['dataset_path_test'] = '/storage/mskim/English_voice/test/'
         dataset_info['dataset_path'] = '/storage/mskim/English_voice/'
-        dataset_info['batch_size'] = 2
+        dataset_info['batch_size'] = 10
         dataset_info['lambda_r'] = 1
         dataset_info['lambda_c'] = 1
+        dataset_info['n_bins'] = 256
 
     else:
         ValueError('There is no dataset named {}'.format(network_name))
@@ -37,10 +38,11 @@ class Config:
         self.parser.add_argument('--dataset_path', type=str, default=self.dataset_info['dataset_path'])
         self.parser.add_argument('--lambda_r', type=float, default=self.dataset_info['lambda_r'])
         self.parser.add_argument('--lambda_c', type=float, default=self.dataset_info['lambda_c'])
+        self.parser.add_argument('--n_bins', type=float, default=self.dataset_info['n_bins'])
 
         #####
         self.parser.add_argument('--scheduler_name', type=str, default='cosine', help='[stepLR | cycliclr | cosine]')
-        self.parser.add_argument('--lr', type=float, default=1e-4)
+        self.parser.add_argument('--lr', type=float, default=1e-6)
         self.parser.add_argument('--optimizer_name', type=str, default='Adam', help='[Adam | RMSprop]')
         self.parser.add_argument('--beta1', type=float, default=0.5, help='momentum term of adam')
         self.parser.add_argument('--momentum', type=float, default=0.9, help='monument for rmsprop optimizer')
@@ -49,7 +51,7 @@ class Config:
         self.parser.add_argument('--save_path', type=str, default='./checkpoints/pre_test_{}_{}'.format(temp_parser.dataset_name, temp_parser.network_name), help='path to store model')
         self.parser.add_argument('--train_test_save_path', type=str, default='./train_test/' + temp_parser.network_name, help='')
         self.parser.add_argument('--use_cuda', type=bool, default=True, help='use cuda')
-        self.parser.add_argument('--gpu_id', type=str, default='1', help='gpu id used to train')
+        self.parser.add_argument('--gpu_id', type=str, default='0', help='gpu id used to train')
         self.parser.add_argument('--phase', type=str, default='train')
         self.parser.add_argument('--num_workers', type=int, default=0)
         self.parser.add_argument('--samplier', type=int, default=1)

@@ -18,34 +18,23 @@ class Conv_layer(nn.Module):
 class pitch_predictor(nn.Module):
     def __init__(self):
         super(pitch_predictor, self).__init__()
-        # self.pitch_predicton = nn.Sequential( Conv_layer(in_channels = 24, out_channels = 128, kernel_size = 3, stride = 1, padding = 1),
-        #                                       nn.ReLU(),
-        #                                       nn.LayerNorm(128),
-        #                                       nn.Dropout(0.5),
-        #                                       Conv_layer(in_channels = 128, out_channels = 256, kernel_size = 3, stride = 1, padding = 1),
-        #                                       nn.ReLU(),
-        #                                       nn.LayerNorm(256),
-        #                                       nn.Dropout(0.5),
-        #                                       nn.Linear(256, 1))
-
-        self.pitch_predicton = nn.Sequential( Conv_layer(in_channels = 24, out_channels = 64, kernel_size = 3, stride = 1, padding = 1),
+        self.pitch_predicton = nn.Sequential( Conv_layer(in_channels = 24, out_channels = 128, kernel_size = 3, stride = 1, padding = 1),
                                               nn.ReLU(),
-                                              nn.LayerNorm(64),
+                                              nn.LayerNorm(128),
                                               nn.Dropout(0.5),
-                                              Conv_layer(in_channels=64, out_channels=64, kernel_size=3, stride=1,padding=1),
+                                              Conv_layer(in_channels = 128, out_channels = 256, kernel_size = 3, stride = 1, padding = 1),
                                               nn.ReLU(),
-                                              nn.LayerNorm(64),
+                                              nn.LayerNorm(256),
                                               nn.Dropout(0.5),
-                                              nn.Linear(64, 1))
+                                              nn.Linear(256, 1))
 
-        n_bins = 64
-        pitch_state = np.load('/storage/mskim/English_voice/make_dataset/new/pitch_state.npy',allow_pickle=True ).tolist()
+        n_bins = 256
+        pitch_state = np.load('/storage/mskim/English_voice/make_dataset/new/pitch_state(only_pitch_norm).npy',allow_pickle=True ).tolist()
         self.pitch_bins = nn.Parameter(torch.linspace(pitch_state['pitch_min'], pitch_state['pitch_max'], n_bins - 1), requires_grad=False)
-        self.pitch_embedding = nn.Embedding(64, 64)
+        self.pitch_embedding = nn.Embedding(256, 256)
 
     def forward(self, r_c_s):
         out = self.pitch_predicton(r_c_s)
-
         prediction = out * 1.0
         embedding = self.pitch_embedding(torch.bucketize(prediction.squeeze(-1), self.pitch_bins))
 

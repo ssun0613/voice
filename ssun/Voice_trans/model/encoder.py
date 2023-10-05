@@ -8,7 +8,6 @@ class Conv_layer(nn.Module):
         if padding is None:
             assert(kernel_size % 2 == 1)
             padding = int(dilation * (kernel_size - 1) / 2)
-
         self.Conv_layer = nn.Conv1d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
 
     def forward(self, params):

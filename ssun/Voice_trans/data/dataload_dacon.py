@@ -8,18 +8,11 @@ from torch.utils.data.sampler import Sampler
 LABEL = {'africa': 0, 'australia': 1, 'canada' : 2, 'england' : 3, 'hongkong' : 4, 'us' : 5}
 
 class accent():
-    def __init__(self, dataset_path, is_training=True,  mode='speechsplit'):
+    def __init__(self, dataset_path, is_training=True):
         self.dataset_dir = dataset_path
         self.is_training = is_training
         self.dataset_mel, self.dataset_mfcc, self.dataset_pitch = self.data_load_npy()
         self.dataset_size = len(self.dataset_mel)
-
-    def data_load_npy(self):
-        dataset_mel = sorted(glob.glob(self.dataset_dir + "make_dataset/new/make_mel/*.npy"))
-        dataset_mfcc = sorted(glob.glob(self.dataset_dir + "make_dataset/new/make_mfcc/*.npy"))
-        dataset_pitch = sorted(glob.glob(self.dataset_dir + "make_dataset/new/make_pitch(only_pitch)/*.npy")) # make_pitch(only_pitch)
-
-        return dataset_mel, dataset_mfcc, dataset_pitch
 
     def __len__(self):
         return self.dataset_size
@@ -41,6 +34,12 @@ class accent():
 
         return sp_id
 
+    def data_load_npy(self):
+        dataset_mel = sorted(glob.glob(self.dataset_dir + 'make_dataset/new/make_mel/*.npy'))
+        dataset_mfcc = sorted(glob.glob(self.dataset_dir + 'make_dataset/new/make_mfcc/*.npy'))
+        dataset_pitch = sorted(glob.glob(self.dataset_dir + 'make_dataset/new/make_pitch(only_pitch_norm)/*.npy')) # make_pitch(only_pitch)
+
+        return dataset_mel, dataset_mfcc, dataset_pitch
 class MyCollator(object):
     def __init__(self):
         self.min_len_seq = 64
@@ -101,18 +100,17 @@ class MultiSampler(Sampler):
         return len(self.sample_idx_array)
 
 def get_loader(opt):
-
     dataset_path = opt.dataset_path
     dataset_train = accent(dataset_path)
 
-    sample = MultiSampler(len(dataset_train), opt.samplier, shuffle=True)
+    sample = MultiSampler(len(dataset_train), opt.samplier, shuffle=False)
     worker_init_fn = lambda x: np.random.seed((torch.initial_seed()) % (2 ** 32))
 
     data_loader = data.DataLoader(dataset=dataset_train, batch_size=opt.batch_size,
                                   sampler=sample,
                                   num_workers=opt.num_workers,
                                   drop_last=True,
-                                  pin_memory=True,
+                                  pin_memory=False,
                                   worker_init_fn=worker_init_fn,
                                   collate_fn=MyCollator())
 
@@ -121,10 +119,10 @@ def get_loader(opt):
 if __name__ == '__main__':
     print("Start data load")
 
-    dataset_path = "/storage/mskim/English_voice/"
+    dataset_path = '/storage/mskim/English_voice/'
 
     dataset_train = accent(dataset_path)
-    mel_tmp, mfcc_tmp, pitch_tmp , sp_id= dataset_train.__getitem__(6578)
+    mel_tmp, mfcc_tmp, pitch_tmp , sp_id = dataset_train.__getitem__(0)
 
 
 
