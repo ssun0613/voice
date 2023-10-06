@@ -4,6 +4,7 @@ sys.path.append("..")
 import torch
 import torch.nn as nn
 from torch.optim import lr_scheduler
+from setproctitle import *
 
 from config import Config
 from model.voice_trans import voice_trans as network
@@ -47,6 +48,7 @@ def setup(opt):
 if __name__ == "__main__":
     config = Config()
     device, net, dataload, optimizer, scheduler = setup(config.opt)
+    setproctitle(config.opt.network_name)
 
     loss_m = nn.MSELoss(reduction='sum')
     loss_l = nn.L1Loss(reduction='sum')
@@ -65,7 +67,6 @@ if __name__ == "__main__":
             sp_id = data['sp_id'].to(device)
 
             if step == 715:
-
                 mel_output, pitch_p, rhythm, content, rhythm_l, content_l = net.forward(voice, sp_id)
 
                 # print(torch.isnan(mel_output).int().sum().item())

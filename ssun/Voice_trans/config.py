@@ -3,7 +3,7 @@ import os
 
 def dataset_info(network_name):
     dataset_info = dict()
-    if  network_name == 'voice_trans':
+    if network_name == 'voice_trans':
         dataset_info['dataset_path_train'] = '/storage/mskim/English_voice/train/'
         dataset_info['dataset_path_test'] = '/storage/mskim/English_voice/test/'
         dataset_info['dataset_path'] = '/storage/mskim/English_voice/'
