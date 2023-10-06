@@ -64,8 +64,6 @@ if __name__ == "__main__":
             pitch_t = data['pitch'].to(device)
             sp_id = data['sp_id'].to(device)
 
-            # mel_output, pitch_p, rhythm, content, rhythm_l, content_l = net.forward(voice, sp_id)
-
             if step == 715:
 
                 mel_output, pitch_p, rhythm, content, rhythm_l, content_l = net.forward(voice, sp_id)
