@@ -7,16 +7,10 @@ import torch.nn as nn
 class voice_trans(nn.Module):
     def __init__(self, opt, device):
         super(voice_trans,self).__init__()
-        if not opt.debugging:
-            from ssun.Voice_trans.model.encoder import Er, Ec
-            from ssun.Voice_trans.model.decoder_s import Decoder_s as Ds
-            # from ssun.Voice_trans.model.decoder_f import Decoder_f as Df
-            from ssun.Voice_trans.model.pitch_predictor import pitch_predictor as P
-        else:
-            from Voice_trans.model.encoder import Er, Ec
-            from Voice_trans.model.decoder_s import Decoder_s as Ds
-            # from ssun.Voice_trans.model.decoder_f import Decoder_f as Df
-            from Voice_trans.model.pitch_predictor import pitch_predictor as P
+        from ssun.Voice_trans.model.encoder import Er, Ec
+        from ssun.Voice_trans.model.decoder_s import Decoder_s as Ds
+        # from ssun.Voice_trans.model.decoder_f import Decoder_f as Df
+        from ssun.Voice_trans.model.pitch_predictor import pitch_predictor as P
 
         self.Er = Er()
         self.Ec = Ec()
