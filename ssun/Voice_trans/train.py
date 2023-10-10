@@ -100,9 +100,9 @@ if __name__ == "__main__":
                 # writer.add_images('mel-spectrogram/voice_prediction', mel_output.transpose(1, 2).unsqueeze(dim=1), global_step=batch_id, dataformats='NCHW')
 
         voice_t = librosa.display.specshow(voice[0].cpu().numpy(), sr=16000)
-        plt.savefig("./fig/voice_t/{}_m".format(curr_epoch+1))
+        plt.savefig("./fig/voice_t/{}_s".format(curr_epoch+1))
         voice_p = librosa.display.specshow(mel_output[0].cpu().detach().numpy(), sr=16000)
-        plt.savefig("./fig/voice_p/{}_m".format(curr_epoch+1))
+        plt.savefig("./fig/voice_p/{}_s".format(curr_epoch+1))
 
         scheduler.step()
         writer.close()
