@@ -35,11 +35,16 @@ class accent():
         return sp_id
 
     def data_load_npy(self):
-        dataset_mel = sorted(glob.glob(self.dataset_dir + 'make_dataset/new/make_mel/*.npy'))
-        dataset_mfcc = sorted(glob.glob(self.dataset_dir + 'make_dataset/new/make_mfcc/*.npy'))
-        dataset_pitch = sorted(glob.glob(self.dataset_dir + 'make_dataset/new/make_pitch(only_pitch_norm)/*.npy')) # make_pitch(only_pitch)
+
+        # dataset_mel = sorted(glob.glob(self.dataset_dir + 'make_dataset/new/make_mel/*.npy'))
+        # dataset_mfcc = sorted(glob.glob(self.dataset_dir + 'make_dataset/new/make_mfcc/*.npy'))
+        # dataset_pitch = sorted(glob.glob(self.dataset_dir + 'make_dataset/new/make_pitch(only_pitch_norm)/*.npy'))
+        dataset_mel = sorted(glob.glob(self.dataset_dir + 'make_dataset/data_nan_expect/mel/*.npy'))
+        dataset_mfcc = sorted(glob.glob(self.dataset_dir + 'make_dataset/data_nan_expect/mfcc/*.npy'))
+        dataset_pitch = sorted(glob.glob(self.dataset_dir + 'make_dataset/data_nan_expect/pitch/*.npy'))
 
         return dataset_mel, dataset_mfcc, dataset_pitch
+
 class MyCollator(object):
     def __init__(self):
         self.min_len_seq = 64

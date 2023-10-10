@@ -19,7 +19,6 @@ class Er(nn.Module):
         self.conv_r = nn.Sequential(Conv_layer(in_channels = 80, out_channels = 128, kernel_size=5, stride=1, padding=2, dilation=1),
                                     nn.GroupNorm(num_groups = 8, num_channels = 128))
         self.lstm_r = nn.LSTM(input_size = 128, hidden_size = 1, num_layers = 1, batch_first = True, bidirectional = True)
-        # self.lstm_r = nn.LSTM(input_size = 128, hidden_size = 1, num_layers = 8, batch_first = True, bidirectional = True)
 
     def forward(self, r):
         for conv_r in self.conv_r:
@@ -48,7 +47,6 @@ class Ec(nn.Module):
                                     Conv_layer(in_channels = 512, out_channels = 512, kernel_size=5, stride=1, padding=2, dilation=1),
                                     nn.GroupNorm(num_groups = 32, num_channels = 512))
         self.lstm_c = nn.LSTM(input_size = 512, hidden_size = 8, num_layers = 1, batch_first = True, bidirectional = True)
-        # self.lstm_c = nn.LSTM(input_size = 512, hidden_size = 8, num_layers = 8, batch_first = True, bidirectional = True)
         self.interp = InterpLnr()
 
     def forward(self, c):

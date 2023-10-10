@@ -10,6 +10,7 @@ def dataset_info(network_name):
         dataset_info['batch_size'] = 10
         dataset_info['lambda_r'] = 1
         dataset_info['lambda_c'] = 1
+        dataset_info['lambda_p'] = 1
         dataset_info['n_bins'] = 256
 
     else:
@@ -38,6 +39,7 @@ class Config:
         self.parser.add_argument('--dataset_path', type=str, default=self.dataset_info['dataset_path'])
         self.parser.add_argument('--lambda_r', type=float, default=self.dataset_info['lambda_r'])
         self.parser.add_argument('--lambda_c', type=float, default=self.dataset_info['lambda_c'])
+        self.parser.add_argument('--lambda_p', type=float, default=self.dataset_info['lambda_p'])
         self.parser.add_argument('--n_bins', type=float, default=self.dataset_info['n_bins'])
 
         #####

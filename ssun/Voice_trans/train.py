@@ -63,7 +63,7 @@ if __name__ == "__main__":
     device, net, dataload, optimizer, scheduler = setup(config.opt)
     setproctitle(config.opt.network_name)
 
-    loss_m = nn.MSELoss(reduction='sum')
+    loss_m = nn.MSELoss(reduction='mean')
     loss_l = nn.L1Loss(reduction='sum')
     print("loss_m = nn.MSELoss(reduction='sum')")
     print("loss_l = nn.L1Loss(reduction='sum')")
@@ -79,19 +79,25 @@ if __name__ == "__main__":
             pitch_t = data['pitch'].to(device)
             sp_id = data['sp_id'].to(device)
 
-            mel_output, pitch_p, rhythm, content, rhythm_l, content_l = net.forward(voice, sp_id)
+            # mel_output, pitch_p, rhythm, content, rhythm_r, content_r = net.forward(voice, sp_id)
+            mel_output, pitch_p, pitch_embedding, rhythm, content, rhythm_r, content_r, pitch_embedding_r = net.forward(voice, sp_id)
 
             voice_loss = loss_m(voice, mel_output)
-            rhythm_loss = loss_l(rhythm, rhythm_l)
-            content_loss = loss_l(content, content_l)
+            rhythm_loss = loss_l(rhythm, rhythm_r)
+            content_loss = loss_l(content, content_r)
 
-            recon_loss = voice_loss + (config.opt.lambda_r * rhythm_loss) + (config.opt.lambda_c * content_loss)
-            pitch_loss = loss_m(pitch_t, pitch_p)
-            total_loss = recon_loss + pitch_loss
+            recon_voice_loss = voice_loss + (config.opt.lambda_r * rhythm_loss) + (config.opt.lambda_c * content_loss)
+
+            pitch_predition_loss = loss_m(pitch_t, pitch_p)
+            pitch_embedding_loss = loss_l(pitch_embedding, pitch_embedding_r)
+
+            recon_pitch_loss = pitch_predition_loss + (config.opt.lambda_p * pitch_embedding_loss)
+
+            total_loss = recon_voice_loss + recon_pitch_loss
 
             optimizer.zero_grad()
-            # total_loss.backward()
-            recon_loss.backward()
+            total_loss.backward()
+            # recon_loss.backward()
             optimizer.step()
             torch.autograd.set_detect_anomaly(True)
 
@@ -108,7 +114,7 @@ if __name__ == "__main__":
         scheduler.step()
         writer.close()
         torch.save({'net': net.state_dict(), 'optimizer': optimizer.state_dict()}, config.opt.save_path +"{}.pth".format(curr_epoch+1))
-        print("voice_loss : {:.5f} rhythm_loss : {:.5f} content_loss : {:.5f} recon_loss : {:.5f}\n".format(voice_loss, rhythm_loss, content_loss, recon_loss))
-        print("pitch_loss : %.5lf\n" % pitch_loss)
+        print("voice_loss : {:.5f} rhythm_loss : {:.5f} content_loss : {:.5f} recon_voice_loss : {:.5f}\n".format(voice_loss, rhythm_loss, content_loss, recon_voice_loss))
+        print("pitch_predition_loss : {:.5f} pitch_embedding_loss : {:.5f} \n".format(pitch_predition_loss, pitch_embedding_loss))
         print("total_loss : %.5lf\n" % total_loss)
-        print("Learning rate : %.5f\n" % optimizer.param_groups[0]['lr'])
+        print("Learning rate : %.9f\n" % optimizer.param_groups[0]['lr'])
