@@ -64,22 +64,30 @@ if __name__=='__main__':
 
         _f0, t = pw.dio(data_wav.astype(np.float64), fs, frame_period=hop_length / fs * 1000)
         pitch = pw.stonemask(data_wav.astype(np.float64), _f0, t, fs).astype(np.float32)
+
+        if np.isnan(pitch).any():
+            print('pitch isnan : {}_{}.npy'.format(data.split('/')[-2], data.split('/')[-1][:-4]))
+
         pitch_norm = normalize_f0(pitch)
 
-        np.save(path + 'new/make_pitch(only_pitch_norm)/{}_{}.npy'.format(data.split('/')[-2], data.split('/')[-1][:-4]), pitch_norm.astype(np.float32), allow_pickle=False)
+        if np.isnan(pitch_norm).any():
+            print('pitch_norm isnan : {}_{}.npy'.format(data.split('/')[-2], data.split('/')[-1][:-4]))
 
-        if index % 1000 == 0:
-            print("save ~ing")
 
-        if len(pitch>0):
-            pitch_scaler.partial_fit(pitch.reshape((-1,1)))
+        # np.save(path + 'new/make_pitch(only_pitch_norm)/{}_{}.npy'.format(data.split('/')[-2], data.split('/')[-1][:-4]), pitch_norm.astype(np.float32), allow_pickle=False)
+        #
+        # if index % 1000 == 0:
+        #     print("save ~ing")
+        #
+        # if len(pitch>0):
+        #     pitch_scaler.partial_fit(pitch.reshape((-1,1)))
 
     print("\nfinish")
 
-    pitch_mean = pitch_scaler.mean_[0]
-    pitch_std = pitch_scaler.scale_[0]
-    pitch_min, pitch_max = normalize(os.path.join(path, "new/make_pitch(only_pitch_norm)"), pitch_mean, pitch_std)
-
-    stats = {"pitch_min": float(pitch_min), "pitch_max": float(pitch_max), "pitch_mean": float(pitch_mean), "pitch_std": float(pitch_std)}
-    np.save(path + 'new/pitch_state(only_pitch_norm).npy',stats)
+    # pitch_mean = pitch_scaler.mean_[0]
+    # pitch_std = pitch_scaler.scale_[0]
+    # pitch_min, pitch_max = normalize(os.path.join(path, "new/make_pitch(only_pitch_norm)"), pitch_mean, pitch_std)
+    #
+    # stats = {"pitch_min": float(pitch_min), "pitch_max": float(pitch_max), "pitch_mean": float(pitch_mean), "pitch_std": float(pitch_std)}
+    # np.save(path + 'new/pitch_state(only_pitch_norm).npy',stats)
 
