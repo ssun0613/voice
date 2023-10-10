@@ -39,5 +39,6 @@ class voice_trans(nn.Module):
 
         rhythm_l = self.Er(mel_output.transpose(2, 1)) # used to calculate rhythm reconstruction loss
         content_l = self.Ec(mel_output.transpose(2, 1)) # used to calculate content reconstruction loss
+        # pitch_p_1, pitch_embedding_1 = self.P(mel_output)
 
         return mel_output, pitch_p, rhythm, content, rhythm_l, content_l

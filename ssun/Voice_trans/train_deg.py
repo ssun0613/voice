@@ -69,41 +69,30 @@ if __name__ == "__main__":
             pitch_t = data['pitch'].to(device)
             sp_id = data['sp_id'].to(device)
 
-            if step == 184:
-                mel_output, pitch_p, rhythm, content, rhythm_l, content_l = net.forward(voice, sp_id)
+            mel_output, pitch_p, rhythm, content, rhythm_l, content_l = net.forward(voice, sp_id)
 
-                # print(torch.isnan(mel_output).int().sum().item())
-                voice_loss = loss_m(voice, mel_output)
-                rhythm_loss = loss_l(rhythm, rhythm_l)
-                content_loss = loss_l(content, content_l)
+            voice_loss = loss_m(voice, mel_output)
+            rhythm_loss = loss_l(rhythm, rhythm_l)
+            content_loss = loss_l(content, content_l)
 
-                recon_loss = voice_loss + (config.opt.lambda_r * rhythm_loss) + (config.opt.lambda_c * content_loss)
-                pitch_loss = loss_m(pitch_t, pitch_p)
-                total_loss = recon_loss + pitch_loss
+            recon_loss = voice_loss + (config.opt.lambda_r * rhythm_loss) + (config.opt.lambda_c * content_loss)
+            pitch_loss = loss_m(pitch_t, pitch_p)
+            total_loss = recon_loss + pitch_loss
 
-                optimizer.zero_grad()
-                total_loss.backward()
-                # recon_loss.backward()
-                optimizer.step()
-                torch.autograd.set_detect_anomaly(True)
+            if (torch.isnan(voice_loss).int().sum().item()!=0) or (torch.isnan(pitch_loss).int().sum().item()!=0):
+                print("epoch : {}, step : {}".format(curr_epoch+1, step))
+                print("mel_output : {}".format(torch.isnan(mel_output).int().sum().item()))
+                print("voice_loss : {}".format(torch.isnan(voice_loss).int().sum().item()))
+                print("pitch_p : {}".format(torch.isnan(pitch_p).int().sum().item()))
+                print("pitch_t isnan : {}".format(torch.isnan(pitch_t).int().sum().item()))
+                print("pitch_t isinf : {}".format(torch.isinf(pitch_t).int().sum().item()))
+                print("pitch_loss : {}".format(torch.isnan(pitch_loss).int().sum().item()))
 
-            else:
-                mel_output, pitch_p, rhythm, content, rhythm_l, content_l = net.forward(voice, sp_id)
-
-                voice_loss = loss_m(voice, mel_output)
-                rhythm_loss = loss_l(rhythm, rhythm_l)
-                content_loss = loss_l(content, content_l)
-
-                recon_loss = voice_loss + (config.opt.lambda_r * rhythm_loss) + (config.opt.lambda_c * content_loss)
-                pitch_loss = loss_m(pitch_t, pitch_p)
-                total_loss = recon_loss + pitch_loss
-
-                optimizer.zero_grad()
-                total_loss.backward()
-                # recon_loss.backward()
-                optimizer.step()
-                print("step : {}".format(step))
-                torch.autograd.set_detect_anomaly(True)
+            optimizer.zero_grad()
+            total_loss.backward()
+            # recon_loss.backward()
+            optimizer.step()
+            torch.autograd.set_detect_anomaly(True)
 
 
         scheduler.step()
