@@ -24,7 +24,10 @@ def setup(opt):
     # -------------------------------------------- setup network --------------------------------------------
     net = network(opt, device).to(device)
     # -------------------------------------------- setup dataload --------------------------------------------
-    from ssun.Voice_trans.data.dataload_dacon import get_loader
+    if not opt.debugging:
+        from ssun.Voice_trans.data.dataload_dacon import get_loader
+    else:
+        from Voice_trans.data.dataload_dacon import get_loader
     dataload = get_loader(opt)
     # -------------------------------------------- setup optimizer --------------------------------------------
     if opt.optimizer_name == 'Adam':
@@ -66,7 +69,7 @@ if __name__ == "__main__":
             pitch_t = data['pitch'].to(device)
             sp_id = data['sp_id'].to(device)
 
-            if step == 715:
+            if step == 184:
                 mel_output, pitch_p, rhythm, content, rhythm_l, content_l = net.forward(voice, sp_id)
 
                 # print(torch.isnan(mel_output).int().sum().item())
@@ -99,6 +102,7 @@ if __name__ == "__main__":
                 total_loss.backward()
                 # recon_loss.backward()
                 optimizer.step()
+                print("step : {}".format(step))
                 torch.autograd.set_detect_anomaly(True)
 
 

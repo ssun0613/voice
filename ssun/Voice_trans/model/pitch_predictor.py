@@ -34,7 +34,10 @@ class pitch_predictor(nn.Module):
         self.pitch_embedding = nn.Embedding(256, 256)
 
     def forward(self, r_c_s):
+        # self.pitch_predicton.state_dict().keys() : odict_keys(['0.Conv_layer.weight', '0.Conv_layer.bias', '2.weight', '2.bias', '4.Conv_layer.weight', '4.Conv_layer.bias', '6.weight', '6.bias', '8.weight', '8.bias'])
+        # self.pitch_embedding.state_dict().keys() : odict_keys(['weight'])
         out = self.pitch_predicton(r_c_s)
+
         prediction = out * 1.0
         embedding = self.pitch_embedding(torch.bucketize(prediction.squeeze(-1), self.pitch_bins))
 

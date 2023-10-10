@@ -26,6 +26,8 @@ class Er(nn.Module):
             r = F.relu(conv_r(r))
         r = r.transpose(1, 2)
 
+        # self.conv_r.state_dict().keys() : odict_keys(['0.Conv_layer.weight', '0.Conv_layer.bias', '1.weight', '1.bias'])
+        # self.lstm_r.state_dict().keys() : odict_keys(['weight_ih_l0', 'weight_hh_l0', 'bias_ih_l0', 'bias_hh_l0', 'weight_ih_l0_reverse', 'weight_hh_l0_reverse', 'bias_ih_l0_reverse', 'bias_hh_l0_reverse'])
         self.lstm_r.flatten_parameters()
         outputs = self.lstm_r(r)[0]
 
@@ -56,6 +58,8 @@ class Ec(nn.Module):
             c = self.interp(c, self.len_org.expand(c.size(0)))
             c = c.transpose(1, 2)
 
+        # self.conv_c.state_dict().keys() : odict_keys(['0.Conv_layer.weight', '0.Conv_layer.bias', '1.Conv_layer.weight', '1.Conv_layer.bias', '2.Conv_layer.weight', '2.Conv_layer.bias', '3.weight', '3.bias'])
+        # self.lstm_c.state_dict().keys() : odict_keys(['weight_ih_l0', 'weight_hh_l0', 'bias_ih_l0', 'bias_hh_l0', 'weight_ih_l0_reverse', 'weight_hh_l0_reverse', 'bias_ih_l0_reverse', 'bias_hh_l0_reverse'])
         c = c.transpose(1, 2)
         c = self.lstm_c(c)[0]
 

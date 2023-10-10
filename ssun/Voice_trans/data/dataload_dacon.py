@@ -108,6 +108,7 @@ def get_loader(opt):
 
     data_loader = data.DataLoader(dataset=dataset_train, batch_size=opt.batch_size,
                                   sampler=sample,
+                                  shuffle=False,
                                   num_workers=opt.num_workers,
                                   drop_last=True,
                                   pin_memory=False,
