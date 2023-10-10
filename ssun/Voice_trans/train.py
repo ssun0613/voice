@@ -59,7 +59,7 @@ if __name__ == "__main__":
     config = Config()
     writer = SummaryWriter()
     config.print_options()
-    torch.cuda.set_device(1)
+    torch.cuda.set_device(int(config.opt.gpu_id))
     device, net, dataload, optimizer, scheduler = setup(config.opt)
     setproctitle(config.opt.network_name)
 
