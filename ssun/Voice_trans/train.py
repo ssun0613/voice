@@ -4,6 +4,7 @@ sys.path.append("..")
 import torch
 import torch.nn as nn
 from torch.optim import lr_scheduler
+from setproctitle import *
 
 from config import Config
 from model.voice_trans import voice_trans as network
@@ -59,6 +60,7 @@ if __name__ == "__main__":
     writer = SummaryWriter()
     config.print_options()
     device, net, dataload, optimizer, scheduler = setup(config.opt)
+    setproctitle(config.opt.network_name)
 
     loss_m = nn.MSELoss(reduction='sum')
     loss_l = nn.L1Loss(reduction='sum')
@@ -76,57 +78,35 @@ if __name__ == "__main__":
             pitch_t = data['pitch'].to(device)
             sp_id = data['sp_id'].to(device)
 
-            # mel_output, pitch_p, rhythm, content, rhythm_l, content_l = net.forward(voice, sp_id)
+            mel_output, pitch_p, rhythm, content, rhythm_l, content_l = net.forward(voice, sp_id)
 
-            if step == 715:
+            voice_loss = loss_m(voice, mel_output)
+            rhythm_loss = loss_l(rhythm, rhythm_l)
+            content_loss = loss_l(content, content_l)
 
-                mel_output, pitch_p, rhythm, content, rhythm_l, content_l = net.forward(voice, sp_id)
+            recon_loss = voice_loss + (config.opt.lambda_r * rhythm_loss) + (config.opt.lambda_c * content_loss)
+            pitch_loss = loss_m(pitch_t, pitch_p)
+            total_loss = recon_loss + pitch_loss
 
-                # print(torch.isnan(mel_output).int().sum().item())
-                voice_loss = loss_m(voice, mel_output)
-                rhythm_loss = loss_l(rhythm, rhythm_l)
-                content_loss = loss_l(content, content_l)
+            optimizer.zero_grad()
+            # total_loss.backward()
+            recon_loss.backward()
+            optimizer.step()
+            torch.autograd.set_detect_anomaly(True)
 
-                recon_loss = voice_loss + (config.opt.lambda_r * rhythm_loss) + (config.opt.lambda_c * content_loss)
-                pitch_loss = loss_m(pitch_t, pitch_p)
-                total_loss = recon_loss + pitch_loss
-
-                optimizer.zero_grad()
-                total_loss.backward()
-                # recon_loss.backward()
-                optimizer.step()
-                torch.autograd.set_detect_anomaly(True)
-
-            elif step != 715:
-
-                mel_output, pitch_p, rhythm, content, rhythm_l, content_l = net.forward(voice, sp_id)
-
-                voice_loss = loss_m(voice, mel_output)
-                rhythm_loss = loss_l(rhythm, rhythm_l)
-                content_loss = loss_l(content, content_l)
-
-                recon_loss = voice_loss + (config.opt.lambda_r * rhythm_loss) + (config.opt.lambda_c * content_loss)
-                pitch_loss = loss_m(pitch_t, pitch_p)
-                total_loss = recon_loss + pitch_loss
-
-                optimizer.zero_grad()
-                total_loss.backward()
-                # recon_loss.backward()
-                optimizer.step()
-                torch.autograd.set_detect_anomaly(True)
 
             # if step % 10 ==0:
                 # writer.add_images('mel-spectrogram/voice_target', voice.transpose(1, 2).unsqueeze(dim=1), global_step=batch_id, dataformats='NCHW')
                 # writer.add_images('mel-spectrogram/voice_prediction', mel_output.transpose(1, 2).unsqueeze(dim=1), global_step=batch_id, dataformats='NCHW')
 
-        # voice_t = librosa.display.specshow(voice[0].cpu().numpy(), sr=16000)
-        # plt.savefig("./fig/voice_t/{}_m".format(curr_epoch+1))
-        # voice_p = librosa.display.specshow(mel_output[0].cpu().detach().numpy(), sr=16000)
-        # plt.savefig("./fig/voice_p/{}_m".format(curr_epoch+1))
+        voice_t = librosa.display.specshow(voice[0].cpu().numpy(), sr=16000)
+        plt.savefig("./fig/voice_t/{}_m".format(curr_epoch+1))
+        voice_p = librosa.display.specshow(mel_output[0].cpu().detach().numpy(), sr=16000)
+        plt.savefig("./fig/voice_p/{}_m".format(curr_epoch+1))
 
         scheduler.step()
         writer.close()
-        # torch.save({'net': net.state_dict(), 'optimizer': optimizer.state_dict()}, config.opt.save_path +"{}.pth".format(curr_epoch+1))
+        torch.save({'net': net.state_dict(), 'optimizer': optimizer.state_dict()}, config.opt.save_path +"{}.pth".format(curr_epoch+1))
         print("voice_loss : {:.5f} rhythm_loss : {:.5f} content_loss : {:.5f} recon_loss : {:.5f}\n".format(voice_loss, rhythm_loss, content_loss, recon_loss))
         print("pitch_loss : %.5lf\n" % pitch_loss)
         print("total_loss : %.5lf\n" % total_loss)
