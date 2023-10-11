@@ -10,7 +10,6 @@ from config import Config
 from model.voice_trans import voice_trans as network
 
 from torch.utils.tensorboard import SummaryWriter
-import tensorflow as tf
 
 import io
 import numpy as np
@@ -23,7 +22,6 @@ def setup(opt):
     if len(opt.gpu_id) != 0:
         if not opt.debugging:
             device = torch.device("cpu")
-            # device = torch.device("cuda:{}".format(opt.gpu_id) if torch.cuda.is_available() else "cpu")
         else:
             device = torch.device("cuda:{}".format(opt.gpu_id) if torch.cuda.is_available() else "cpu")
     else:
@@ -63,9 +61,9 @@ if __name__ == "__main__":
     device, net, dataload, optimizer, scheduler = setup(config.opt)
     setproctitle(config.opt.network_name)
 
-    loss_m = nn.MSELoss(reduction='mean')
+    loss_m = nn.MSELoss(reduction='sum')
     loss_l = nn.L1Loss(reduction='sum')
-    print("loss_m = nn.MSELoss(reduction='sum')")
+    print("loss_m = nn.MSELoss(reduction='mean')")
     print("loss_l = nn.L1Loss(reduction='sum')")
 
     for curr_epoch in range(config.opt.epochs):
@@ -95,6 +93,16 @@ if __name__ == "__main__":
 
             total_loss = recon_voice_loss + recon_pitch_loss
 
+            if step % 100 ==0:
+                writer.add_scalar("voice_loss", voice_loss, step)
+                writer.add_scalar("rhythm_loss", rhythm_loss, step)
+                writer.add_scalar("content_loss", content_loss, step)
+                writer.add_scalar("recon_voice_loss", recon_voice_loss, step)
+                writer.add_scalar("pitch_predition_loss", pitch_predition_loss, step)
+                writer.add_scalar("pitch_embedding_loss", pitch_embedding_loss, step)
+                writer.add_scalar("recon_pitch_loss", recon_pitch_loss, step)
+                writer.add_scalar("total_loss", total_loss, step)
+
             optimizer.zero_grad()
             total_loss.backward()
             # recon_loss.backward()
@@ -107,9 +115,9 @@ if __name__ == "__main__":
                 # writer.add_images('mel-spectrogram/voice_prediction', mel_output.transpose(1, 2).unsqueeze(dim=1), global_step=batch_id, dataformats='NCHW')
 
         voice_t = librosa.display.specshow(voice[0].cpu().numpy(), sr=16000)
-        plt.savefig("./fig/voice_t/{}_s".format(curr_epoch+1))
+        plt.savefig("./fig/voice_t/{}_sum".format(curr_epoch+1))
         voice_p = librosa.display.specshow(mel_output[0].cpu().detach().numpy(), sr=16000)
-        plt.savefig("./fig/voice_p/{}_s".format(curr_epoch+1))
+        plt.savefig("./fig/voice_p/{}_sum".format(curr_epoch+1))
 
         scheduler.step()
         writer.close()
