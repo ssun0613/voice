@@ -105,7 +105,6 @@ if __name__ == "__main__":
 
             optimizer.zero_grad()
             total_loss.backward()
-            # recon_loss.backward()
             optimizer.step()
             torch.autograd.set_detect_anomaly(True)
 
