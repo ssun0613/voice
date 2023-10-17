@@ -13,9 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 import io
 import numpy as np
-import librosa
-import librosa.display
-import matplotlib.pyplot as plt
+import cv2
 
 def setup(opt):
     #-------------------------------------------- setup device --------------------------------------------
@@ -53,6 +51,54 @@ def setup(opt):
 
     return device, net, dataload, optimizer, scheduler
 
+def compute_ed_loss(voice, pitch_t, mel_output, pitch_p, pitch_embedding, rhythm, content, rhythm_r, content_r, pitch_embedding_r):
+    loss_m = nn.MSELoss(reduction='sum')
+    loss_l = nn.L1Loss(reduction='sum')
+
+    voice_loss = loss_m(voice, mel_output)
+    rhythm_loss = loss_l(rhythm, rhythm_r)
+    content_loss = loss_l(content, content_r)
+
+    recon_voice_loss = voice_loss + (config.opt.lambda_r * rhythm_loss) + (config.opt.lambda_c * content_loss)
+
+    pitch_predition_loss = loss_m(pitch_t, pitch_p)
+    pitch_embedding_loss = loss_l(pitch_embedding, pitch_embedding_r)
+
+    recon_pitch_loss = pitch_predition_loss + (config.opt.lambda_p * pitch_embedding_loss)
+
+    total_loss = recon_voice_loss + recon_pitch_loss
+
+    return voice_loss, rhythm_loss, content_loss, recon_voice_loss, pitch_predition_loss, pitch_embedding_loss, recon_pitch_loss, total_loss
+
+def tensorboard_draw(voice, mel_output, voice_loss, rhythm_loss, content_loss, recon_voice_loss, pitch_predition_loss, pitch_embedding_loss, recon_pitch_loss, total_loss, global_step):
+    writer.add_scalar("encoder/voice_loss", voice_loss, global_step)
+    writer.add_scalar("encoder/rhythm_loss", rhythm_loss, global_step)
+    writer.add_scalar("encoder/content_loss", content_loss, global_step)
+    writer.add_scalar("encoder/recon_voice_loss", recon_voice_loss, global_step)
+
+    writer.add_scalar("pitch_preditor/pitch_predition_loss", pitch_predition_loss, global_step)
+    writer.add_scalar("pitch_preditor/pitch_embedding_loss", pitch_embedding_loss, global_step)
+    writer.add_scalar("pitch_preditor/recon_pitch_loss", recon_pitch_loss, global_step)
+
+    writer.add_scalar("total_loss", total_loss, global_step)
+
+    spectrogram_target = []
+    spectrogram_prediction = []
+
+    for i in range(voice.shape[0]):
+        target_spectogram = (voice[i].unsqueeze(dim=0).permute(1, 2, 0).cpu().detach().numpy() * 255).astype(np.uint8)
+        target_spectogram = cv2.applyColorMap(target_spectogram, cv2.COLORMAP_JET)
+        spectrogram_target.append(target_spectogram)
+
+        prediction_spectogram = (mel_output[i].unsqueeze(dim=0).permute(1, 2, 0).cpu().detach().numpy() * 255).astype(np.uint8)
+        prediction_spectogram = cv2.applyColorMap(prediction_spectogram, cv2.COLORMAP_JET)
+        spectrogram_prediction.append(prediction_spectogram)
+
+    spectrogram_target = np.array(spectrogram_target)
+    spectrogram_prediction = np.array(spectrogram_prediction)
+    writer.add_images('mel-spectrogram/voice_target', spectrogram_target, global_step, dataformats='NHWC')
+    writer.add_images('mel-spectrogram/voice_prediction', spectrogram_prediction, global_step, dataformats='NHWC')
+
 if __name__ == "__main__":
     config = Config()
     writer = SummaryWriter()
@@ -61,62 +107,29 @@ if __name__ == "__main__":
     device, net, dataload, optimizer, scheduler = setup(config.opt)
     setproctitle(config.opt.network_name)
 
-    loss_m = nn.MSELoss(reduction='sum')
-    loss_l = nn.L1Loss(reduction='sum')
-    print("loss_m = nn.MSELoss(reduction='mean')")
-    print("loss_l = nn.L1Loss(reduction='sum')")
-
+    global_step = 0
     for curr_epoch in range(config.opt.epochs):
-        step = 0
         print("--------------------------------------[ Epoch : {} ]-------------------------------------".format(curr_epoch+1))
         for batch_id, data in enumerate(dataload, 1):
-            step +=1
+            global_step+=1
 
             # data : melsp, mfcc, pitch, len_org, sp_id
             voice = data['melsp'].to(device)
             pitch_t = data['pitch'].to(device)
             sp_id = data['sp_id'].to(device)
 
-            # mel_output, pitch_p, rhythm, content, rhythm_r, content_r = net.forward(voice, sp_id)
             mel_output, pitch_p, pitch_embedding, rhythm, content, rhythm_r, content_r, pitch_embedding_r = net.forward(voice, sp_id)
 
-            voice_loss = loss_m(voice, mel_output)
-            rhythm_loss = loss_l(rhythm, rhythm_r)
-            content_loss = loss_l(content, content_r)
+            voice_loss, rhythm_loss, content_loss, recon_voice_loss, pitch_predition_loss, pitch_embedding_loss, recon_pitch_loss, total_loss \
+                = compute_ed_loss(voice, pitch_t, mel_output, pitch_p, pitch_embedding, rhythm, content, rhythm_r, content_r, pitch_embedding_r)
 
-            recon_voice_loss = voice_loss + (config.opt.lambda_r * rhythm_loss) + (config.opt.lambda_c * content_loss)
-
-            pitch_predition_loss = loss_m(pitch_t, pitch_p)
-            pitch_embedding_loss = loss_l(pitch_embedding, pitch_embedding_r)
-
-            recon_pitch_loss = pitch_predition_loss + (config.opt.lambda_p * pitch_embedding_loss)
-
-            total_loss = recon_voice_loss + recon_pitch_loss
-
-            if step % 100 ==0:
-                writer.add_scalar("voice_loss", voice_loss, step)
-                writer.add_scalar("rhythm_loss", rhythm_loss, step)
-                writer.add_scalar("content_loss", content_loss, step)
-                writer.add_scalar("recon_voice_loss", recon_voice_loss, step)
-                writer.add_scalar("pitch_predition_loss", pitch_predition_loss, step)
-                writer.add_scalar("pitch_embedding_loss", pitch_embedding_loss, step)
-                writer.add_scalar("recon_pitch_loss", recon_pitch_loss, step)
-                writer.add_scalar("total_loss", total_loss, step)
+            if batch_id % 500 == 0:
+                tensorboard_draw(voice, mel_output, voice_loss, rhythm_loss, content_loss, recon_voice_loss,pitch_predition_loss, pitch_embedding_loss, recon_pitch_loss, total_loss, global_step)
 
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
             torch.autograd.set_detect_anomaly(True)
-
-
-            # if step % 10 ==0:
-                # writer.add_images('mel-spectrogram/voice_target', voice.transpose(1, 2).unsqueeze(dim=1), global_step=batch_id, dataformats='NCHW')
-                # writer.add_images('mel-spectrogram/voice_prediction', mel_output.transpose(1, 2).unsqueeze(dim=1), global_step=batch_id, dataformats='NCHW')
-
-        voice_t = librosa.display.specshow(voice[0].cpu().numpy(), sr=16000)
-        plt.savefig("./fig/voice_t/{}_sum".format(curr_epoch+1))
-        voice_p = librosa.display.specshow(mel_output[0].cpu().detach().numpy(), sr=16000)
-        plt.savefig("./fig/voice_p/{}_sum".format(curr_epoch+1))
 
         scheduler.step()
         writer.close()
