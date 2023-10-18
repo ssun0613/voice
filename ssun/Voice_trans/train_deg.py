@@ -7,7 +7,7 @@ from torch.optim import lr_scheduler
 from setproctitle import *
 
 from config import Config
-from model.voice_trans import voice_trans as network
+from model.generator import voice_trans as network
 
 import io
 import numpy as np

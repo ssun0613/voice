@@ -4,9 +4,9 @@ import torch
 import torch.nn as nn
 
 
-class voice_trans(nn.Module):
+class generator(nn.Module):
     def __init__(self, opt, device):
-        super(voice_trans,self).__init__()
+        super(generator,self).__init__()
         if not opt.debugging:
             from ssun.Voice_trans.model.encoder import Er, Ec
             from ssun.Voice_trans.model.decoder_s import Decoder_s as Ds
