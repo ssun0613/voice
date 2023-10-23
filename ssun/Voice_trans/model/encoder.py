@@ -16,17 +16,21 @@ class Conv_layer(nn.Module):
 class Er(nn.Module):
     def __init__(self):
         super(Er, self).__init__()
+        # self.conv_r = nn.Sequential(Conv_layer(in_channels = 80, out_channels = 128, kernel_size=5, stride=1, padding=2, dilation=1),
+        #                             nn.GroupNorm(num_groups = 8, num_channels = 128))
         self.conv_r = nn.Sequential(Conv_layer(in_channels = 80, out_channels = 128, kernel_size=5, stride=1, padding=2, dilation=1),
+                                    Conv_layer(in_channels = 128, out_channels = 128, kernel_size=5, stride=1, padding=2, dilation=1),
+                                    Conv_layer(in_channels = 128, out_channels = 128, kernel_size=5, stride=1, padding=2, dilation=1),
+                                    Conv_layer(in_channels = 128, out_channels = 128, kernel_size=5, stride=1, padding=2, dilation=1),
                                     nn.GroupNorm(num_groups = 8, num_channels = 128))
         self.lstm_r = nn.LSTM(input_size = 128, hidden_size = 1, num_layers = 1, batch_first = True, bidirectional = True)
+        self.interp = InterpLnr()
 
     def forward(self, r):
         for conv_r in self.conv_r:
             r = F.relu(conv_r(r))
         r = r.transpose(1, 2)
 
-        # self.conv_r.state_dict().keys() : odict_keys(['0.Conv_layer.weight', '0.Conv_layer.bias', '1.weight', '1.bias'])
-        # self.lstm_r.state_dict().keys() : odict_keys(['weight_ih_l0', 'weight_hh_l0', 'bias_ih_l0', 'bias_hh_l0', 'weight_ih_l0_reverse', 'weight_hh_l0_reverse', 'bias_ih_l0_reverse', 'bias_hh_l0_reverse'])
         self.lstm_r.flatten_parameters()
         outputs = self.lstm_r(r)[0]
 
@@ -45,6 +49,7 @@ class Ec(nn.Module):
         self.conv_c = nn.Sequential(Conv_layer(in_channels = 80, out_channels = 512, kernel_size=5, stride=1, padding=2, dilation=1),
                                     Conv_layer(in_channels = 512, out_channels = 512, kernel_size=5, stride=1, padding=2, dilation=1),
                                     Conv_layer(in_channels = 512, out_channels = 512, kernel_size=5, stride=1, padding=2, dilation=1),
+                                    Conv_layer(in_channels = 512, out_channels = 512, kernel_size=5, stride=1, padding=2, dilation=1),
                                     nn.GroupNorm(num_groups = 32, num_channels = 512))
         self.lstm_c = nn.LSTM(input_size = 512, hidden_size = 8, num_layers = 1, batch_first = True, bidirectional = True)
         self.interp = InterpLnr()
@@ -56,8 +61,6 @@ class Ec(nn.Module):
             c = self.interp(c, self.len_org.expand(c.size(0)))
             c = c.transpose(1, 2)
 
-        # self.conv_c.state_dict().keys() : odict_keys(['0.Conv_layer.weight', '0.Conv_layer.bias', '1.Conv_layer.weight', '1.Conv_layer.bias', '2.Conv_layer.weight', '2.Conv_layer.bias', '3.weight', '3.bias'])
-        # self.lstm_c.state_dict().keys() : odict_keys(['weight_ih_l0', 'weight_hh_l0', 'bias_ih_l0', 'bias_hh_l0', 'weight_ih_l0_reverse', 'weight_hh_l0_reverse', 'bias_ih_l0_reverse', 'bias_hh_l0_reverse'])
         c = c.transpose(1, 2)
         c = self.lstm_c(c)[0]
 

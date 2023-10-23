@@ -27,6 +27,7 @@ class Config:
         self.parser.add_argument('--network_name', type=str, default='voice_trans')
         self.parser.add_argument('--weight_name', type=str, default='voice_trans')
         self.parser.add_argument('--dataset_name', type=str, default='dacon')
+        self.parser.add_argument('--tensor_name', type=str, default='dis_star')
         self.parser.add_argument('--continue_train', type=bool, default=False)
         self.parser.add_argument('--epochs', type=int, default=50)
         #

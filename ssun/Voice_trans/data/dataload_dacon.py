@@ -18,7 +18,6 @@ class accent():
         return self.dataset_size
 
     def __getitem__(self, index):
-        # make_datasave.py reference
         mel_tmp = np.load(self.dataset_mel[index % self.dataset_size])
         mfcc_tmp = np.load(self.dataset_mfcc[index % self.dataset_size])
         pitch_tmp = np.load(self.dataset_pitch[index % self.dataset_size])
@@ -123,12 +122,15 @@ def get_loader(opt):
     return data_loader
 
 if __name__ == '__main__':
-    print("Start data load")
+    from ssun.Voice_trans.config import Config
 
-    dataset_path = '/storage/mskim/English_voice/'
+    config = Config()
+    dataload = get_loader(config.opt)
+    for batch_id, data in enumerate(dataload, 1):
+        print()
 
-    dataset_train = accent(dataset_path)
-    mel_tmp, mfcc_tmp, pitch_tmp , sp_id = dataset_train.__getitem__(0)
+    # mel_tmp, mfcc_tmp, pitch_tmp, sp_id = accent('/storage/mskim/English_voice/').__getitem__(0)
+
 
 
 
