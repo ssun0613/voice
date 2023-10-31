@@ -34,15 +34,12 @@ class accent():
         return sp_id
 
     def data_load_npy(self):
-
-        # dataset_mel = sorted(glob.glob(self.dataset_dir + 'make_dataset/new/make_mel/*.npy'))
-        # dataset_mfcc = sorted(glob.glob(self.dataset_dir + 'make_dataset/new/make_mfcc/*.npy'))
-        # dataset_pitch = sorted(glob.glob(self.dataset_dir + 'make_dataset/new/make_pitch(only_pitch_norm)/*.npy'))
         dataset_mel = sorted(glob.glob(self.dataset_dir + 'make_dataset/data_nan_expect/mel/*.npy'))
         dataset_mfcc = sorted(glob.glob(self.dataset_dir + 'make_dataset/data_nan_expect/mfcc/*.npy'))
         dataset_pitch = sorted(glob.glob(self.dataset_dir + 'make_dataset/data_nan_expect/pitch/*.npy'))
 
-        return dataset_mel, dataset_mfcc, dataset_pitch
+        # return dataset_mel, dataset_mfcc, dataset_pitch
+        return dataset_mel[0:20], dataset_mfcc[0:20], dataset_pitch[0:20]
 
 class MyCollator(object):
     def __init__(self):
@@ -130,7 +127,3 @@ if __name__ == '__main__':
         print()
 
     # mel_tmp, mfcc_tmp, pitch_tmp, sp_id = accent('/storage/mskim/English_voice/').__getitem__(0)
-
-
-
-

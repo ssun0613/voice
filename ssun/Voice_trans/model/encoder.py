@@ -16,15 +16,9 @@ class Conv_layer(nn.Module):
 class Er(nn.Module):
     def __init__(self):
         super(Er, self).__init__()
-        # self.conv_r = nn.Sequential(Conv_layer(in_channels = 80, out_channels = 128, kernel_size=5, stride=1, padding=2, dilation=1),
-        #                             nn.GroupNorm(num_groups = 8, num_channels = 128))
         self.conv_r = nn.Sequential(Conv_layer(in_channels = 80, out_channels = 128, kernel_size=5, stride=1, padding=2, dilation=1),
-                                    Conv_layer(in_channels = 128, out_channels = 128, kernel_size=5, stride=1, padding=2, dilation=1),
-                                    Conv_layer(in_channels = 128, out_channels = 128, kernel_size=5, stride=1, padding=2, dilation=1),
-                                    Conv_layer(in_channels = 128, out_channels = 128, kernel_size=5, stride=1, padding=2, dilation=1),
                                     nn.GroupNorm(num_groups = 8, num_channels = 128))
         self.lstm_r = nn.LSTM(input_size = 128, hidden_size = 1, num_layers = 1, batch_first = True, bidirectional = True)
-        self.interp = InterpLnr()
 
     def forward(self, r):
         for conv_r in self.conv_r:
@@ -47,7 +41,6 @@ class Ec(nn.Module):
         self.register_buffer('len_org', torch.tensor(192))
         # Ec architecture
         self.conv_c = nn.Sequential(Conv_layer(in_channels = 80, out_channels = 512, kernel_size=5, stride=1, padding=2, dilation=1),
-                                    Conv_layer(in_channels = 512, out_channels = 512, kernel_size=5, stride=1, padding=2, dilation=1),
                                     Conv_layer(in_channels = 512, out_channels = 512, kernel_size=5, stride=1, padding=2, dilation=1),
                                     Conv_layer(in_channels = 512, out_channels = 512, kernel_size=5, stride=1, padding=2, dilation=1),
                                     nn.GroupNorm(num_groups = 32, num_channels = 512))

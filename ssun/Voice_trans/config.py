@@ -28,8 +28,10 @@ class Config:
         self.parser.add_argument('--weight_name', type=str, default='voice_trans')
         self.parser.add_argument('--dataset_name', type=str, default='dacon')
         self.parser.add_argument('--tensor_name', type=str, default='dis_star')
+        self.parser.add_argument('--checkpoint_name', type=str, default='dis_star')
         self.parser.add_argument('--continue_train', type=bool, default=False)
-        self.parser.add_argument('--epochs', type=int, default=50)
+        self.parser.add_argument('--epochs', type=int, default=100)
+        self.parser.add_argument('--checkpoint_load_num', type=int, default=500)
         #
         temp_parser, _ = self.parser.parse_known_args()
         self.dataset_info = dataset_info(network_name=temp_parser.network_name)
