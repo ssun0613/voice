@@ -16,10 +16,10 @@ class ConvGLU1D(nn.Module):
         h = h_l * torch.sigmoid(h_g)
 
         return h
-class Discriminator1(nn.Module):
+class Discriminator(nn.Module):
     # 1D convolutional architecture
     def __init__(self):
-        super(Discriminator1, self).__init__()
+        super(Discriminator, self).__init__()
         in_ch = 192
         mid_ch = 80
         dor = 0.1
@@ -51,6 +51,6 @@ if __name__ == '__main__':
 
     np.random.seed(0)
     input = torch.from_numpy(np.random.randn(10, 192, 80)).float()
-    discriminator = Discriminator1()
+    discriminator = Discriminator()
     output = discriminator(input)
     print("Discriminator output shape ", output.shape) # torch.Size([10, 20, 20])

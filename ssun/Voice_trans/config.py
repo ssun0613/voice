@@ -32,10 +32,10 @@ class Config:
         self.parser.add_argument('--continue_train', type=bool, default=False)
         self.parser.add_argument('--epochs', type=int, default=100)
         self.parser.add_argument('--checkpoint_load_num', type=int, default=500)
-        #
-        temp_parser, _ = self.parser.parse_known_args()
-        self.dataset_info = dataset_info(network_name=temp_parser.network_name)
-        #
+
+        parser, _ = self.parser.parse_known_args()
+        self.dataset_info = dataset_info(network_name=parser.network_name)
+
         self.parser.add_argument('--batch_size', type=int, default=self.dataset_info['batch_size'])
         self.parser.add_argument('--dataset_path_train', type=str, default=self.dataset_info['dataset_path_train'])
         self.parser.add_argument('--dataset_path_test', type=str, default=self.dataset_info['dataset_path_test'])
@@ -45,16 +45,15 @@ class Config:
         self.parser.add_argument('--lambda_p', type=float, default=self.dataset_info['lambda_p'])
         self.parser.add_argument('--n_bins', type=float, default=self.dataset_info['n_bins'])
 
-        #####
         self.parser.add_argument('--scheduler_name', type=str, default='cosine', help='[stepLR | cycliclr | cosine]')
         self.parser.add_argument('--lr', type=float, default=1e-6)
         self.parser.add_argument('--optimizer_name', type=str, default='Adam', help='[Adam | RMSprop]')
         self.parser.add_argument('--beta1', type=float, default=0.5, help='momentum term of adam')
         self.parser.add_argument('--momentum', type=float, default=0.9, help='monument for rmsprop optimizer')
         self.parser.add_argument('--weight_decay', type=float, default=5e-5, help='weight decay')
-        #####
-        self.parser.add_argument('--save_path', type=str, default='./checkpoints/pre_test_{}_{}'.format(temp_parser.dataset_name, temp_parser.network_name), help='path to store model')
-        self.parser.add_argument('--train_test_save_path', type=str, default='./train_test/' + temp_parser.network_name, help='')
+
+        self.parser.add_argument('--save_path', type=str, default='./checkpoints/pre_test_{}_{}'.format(parser.dataset_name, parser.network_name), help='path to store model')
+        self.parser.add_argument('--train_test_save_path', type=str, default='./train_test/' + parser.network_name, help='')
         self.parser.add_argument('--use_cuda', type=bool, default=True, help='use cuda')
         self.parser.add_argument('--gpu_id', type=str, default='0', help='gpu id used to train')
         self.parser.add_argument('--phase', type=str, default='train')
