@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 
-def compute_G_loss(opt, voice, pitch_t, mel_output, pitch_p, pitch_embedding, rhythm, content, rhythm_r, content_r, pitch_embedding_r, d_r_mel_out):
+def compute_G_loss(opt, voice, pitch_t, mel_output, pitch_p, rhythm, content, rhythm_r, content_r, pitch_p_r, d_r_mel_out):
     loss_m = nn.MSELoss(reduction='sum')
     loss_l = nn.L1Loss(reduction='sum')
 
@@ -13,7 +13,7 @@ def compute_G_loss(opt, voice, pitch_t, mel_output, pitch_p, pitch_embedding, rh
     recon_voice_loss = voice_loss + (opt.lambda_r * rhythm_loss) + (opt.lambda_c * content_loss)
 
     pitch_predition_loss = loss_m(pitch_t, pitch_p)
-    pitch_embedding_loss = loss_l(pitch_embedding, pitch_embedding_r)
+    pitch_embedding_loss = loss_l(pitch_p, pitch_p_r)
 
     recon_pitch_loss = pitch_predition_loss + (opt.lambda_p * pitch_embedding_loss)
 

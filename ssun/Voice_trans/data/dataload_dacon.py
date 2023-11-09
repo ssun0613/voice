@@ -63,8 +63,8 @@ class MyCollator(object):
 
             mel_pad = np.pad(mel_clip, ((0, self.max_len_pad - mel_clip.shape[0]), (0, 0)), 'constant')
             mfcc_pad = np.pad(mfcc_clip, ((0, self.max_len_pad - mfcc_clip.shape[0]), (0, 0)), 'constant')
-            # pitch_pad = np.pad(pitch_crop[:, np.newaxis], ((0, self.max_len_pad - pitch_crop.shape[0]), (0, 0)), 'constant')
-            pitch_pad = np.pad(pitch_crop[:, np.newaxis], ((0, self.max_len_pad - pitch_crop.shape[0]), (0, 0)), 'constant', constant_values=-1e10)
+            pitch_pad = np.pad(pitch_crop[:, np.newaxis], ((0, self.max_len_pad - pitch_crop.shape[0]), (0, 0)), 'constant')
+            # pitch_pad = np.pad(pitch_crop[:, np.newaxis], ((0, self.max_len_pad - pitch_crop.shape[0]), (0, 0)), 'constant', constant_values=-1e10)
 
             new_batch.append((mel_pad, mfcc_pad, pitch_pad, len_crop[0], sp_id))
 

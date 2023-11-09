@@ -75,8 +75,7 @@ if __name__ == "__main__":
 
     setproctitle(config.opt.network_name)
     # torch.cuda.set_device(int(config.opt.gpu_id))
-
-    # writer = SummaryWriter('./runs/{}'.format(config.opt.tensor_name))
+    writer = SummaryWriter('./runs/{}'.format(config.opt.tensor_name))
     device, generator, discriminator, dataload, optimizer_g, optimizer_d, scheduler_g, scheduler_d = setup(config.opt)
     print(device)
 
@@ -91,15 +90,6 @@ if __name__ == "__main__":
             len_org = data['len_org'].to(device)
             sp_id = data['sp_id'].to(device)
 
-            # ------------------- pre pitch -------------------
-
-            mel_pitch = torch.cat((mel_in, pitch_t), dim=-1)
-            mel_pitch_intrp = InterpLnr()(mel_pitch, len_org)
-
-            pitch_quan = quantize_f0_torch(mel_pitch_intrp[:, :, -1])[0]
-
-            mel_pitch_quan = torch.cat((mel_pitch_intrp[:, :, :-1], pitch_quan), dim=-1)
-
             # ---------------- generator train ----------------
 
             mel_out, pitch_p, rhythm, content, rhythm_r, content_r, pitch_p_r = generator.forward(mel_in, sp_id)
@@ -109,8 +99,7 @@ if __name__ == "__main__":
 
             # ---------------- generator loss compute ----------------
 
-            # recon_voice_loss, recon_pitch_loss, total_loss_g = compute_G_loss(config.opt, mel_in, pitch_t, mel_out, pitch_p, pitch_embedding, rhythm, content, rhythm_r, content_r, pitch_embedding_r, d_r_mel_out)
-            total_loss_g=2
+            recon_voice_loss, recon_pitch_loss, total_loss_g = compute_G_loss(config.opt, mel_in, pitch_t, mel_out, pitch_p, rhythm, content, rhythm_r, content_r, pitch_p_r, d_r_mel_out)
             optimizer_g.zero_grad()
             optimizer_d.zero_grad()
             total_loss_g.backward(retain_graph=True)
@@ -124,7 +113,6 @@ if __name__ == "__main__":
                 # ---------------- discriminator loss compute ----------------
 
                 total_loss_d = compute_D_loss(d_r_mel_in, d_r_mel_out)
-
                 total_loss_d = total_loss_d * 100
 
                 optimizer_d.zero_grad()
