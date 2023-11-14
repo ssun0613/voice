@@ -19,8 +19,6 @@ from functions.etc_fcn import quantize_f0_torch
 import matplotlib
 matplotlib.use("Agg")
 
- # python train.py --debugging True --batch_size 2 --epochs 100000 --tensor_name no_discriminator_encoder_ch --checkpoint_name no_discriminator_encoder_ch
-
 def setup(opt):
     #-------------------------------------------- setup device --------------------------------------------
     if len(opt.gpu_id) != 0:
@@ -74,7 +72,7 @@ if __name__ == "__main__":
     config.print_options()
 
     setproctitle(config.opt.network_name)
-    # torch.cuda.set_device(int(config.opt.gpu_id))
+    torch.cuda.set_device(int(config.opt.gpu_id))
     writer = SummaryWriter('./runs/{}'.format(config.opt.tensor_name))
     device, generator, discriminator, dataload, optimizer_g, optimizer_d, scheduler_g, scheduler_d = setup(config.opt)
     print(device)
@@ -105,7 +103,7 @@ if __name__ == "__main__":
             total_loss_g.backward(retain_graph=True)
             optimizer_g.step()
 
-            if batch_id % 500 == 0:
+            if batch_id % 5000 == 0:
                 # ---------------- discriminator train ----------------
                 d_r_mel_in = discriminator.forward(mel_in)
                 d_r_mel_out = discriminator.forward(mel_out.detach())
@@ -130,9 +128,9 @@ if __name__ == "__main__":
         writer.close()
 
         print("total_loss_g : %.5lf\n" % total_loss_g)
-        # print("total_loss_d : %.5lf\n" % total_loss_d)
+        # print("total_loss_d : %.5lf" % total_loss_d)
 
-        if curr_epoch % 50 == 0 :
+        if curr_epoch % 500 == 0 :
             os.makedirs(("/storage/mskim/checkpoint/{}".format(config.opt.checkpoint_name)), exist_ok=True)
             torch.save({'generator': generator.state_dict(), 'discriminator': discriminator.state_dict(), 'optimizer_g': optimizer_g.state_dict(), 'optimizer_d': optimizer_d.state_dict()}, "/storage/mskim/checkpoint/{}/{}.pth".format(config.opt.checkpoint_name, curr_epoch + 1))
 

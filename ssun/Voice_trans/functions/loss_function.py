@@ -13,9 +13,9 @@ def compute_G_loss(opt, voice, pitch_t, mel_output, pitch_p, rhythm, content, rh
     recon_voice_loss = voice_loss + (opt.lambda_r * rhythm_loss) + (opt.lambda_c * content_loss)
 
     pitch_predition_loss = loss_m(pitch_t, pitch_p)
-    pitch_embedding_loss = loss_l(pitch_p, pitch_p_r)
+    pitch_reconstruction_loss = loss_l(pitch_p, pitch_p_r)
 
-    recon_pitch_loss = pitch_predition_loss + (opt.lambda_p * pitch_embedding_loss)
+    recon_pitch_loss = pitch_predition_loss + (opt.lambda_p * pitch_reconstruction_loss)
 
     # loss_dr_for_g = (1 - torch.mean((0 - d_r_mel_out) ** 2)) * 100
     loss_dr_for_g = 0
