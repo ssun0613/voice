@@ -2,6 +2,7 @@ import sys, os
 sys.path.append("..")
 import torch
 import torch.nn as nn
+from Voice_trans.functions.etc_fcn import quantize_f0_torch
 
 class generator(nn.Module):
     def __init__(self, opt, device):
@@ -30,8 +31,10 @@ class generator(nn.Module):
         r_c_s = torch.cat((rhythm_repeat, content_repeat, sp_id.unsqueeze(1).expand(-1, voice.transpose(2,1).size(-1), -1)), dim=-1)
         pitch_p_ = self.P(r_c_s)
 
-        pitch_p_repeat = pitch_p_
-        # pitch_p_repeat = pitch_p_.repeat_interleave(8, dim=1)
+
+        pitch_p_repeat = pitch_p_.repeat_interleave(8, dim=1)
+
+        pitch_p_repeat_quan = quantize_f0_torch(pitch_p_repeat)[0]
 
         r_c_p = torch.cat((rhythm_repeat, content_repeat, pitch_p_repeat), dim=-1)
         mel_output = self.Ds(r_c_p)
@@ -42,9 +45,17 @@ class generator(nn.Module):
         rhythm_r_repeat = rhythm_r.repeat_interleave(8, dim=1)
         content_r_repeat = content_r.repeat_interleave(8, dim=1)
 
-        r_c_p_r = torch.cat((rhythm_r_repeat, content_r_repeat, sp_id.unsqueeze(1).expand(-1, voice.transpose(2,1).size(-1), -1)), dim=-1) # used to calculate pitch reconstruction loss
+        r_c_p_r = torch.cat((rhythm_r_repeat, content_r_repeat, sp_id.unsqueeze(1).expand(-1, voice.transpose(2,1).size(-1), -1)), dim=-1)
 
-        pitch_p_r = self.P(r_c_p_r)
-        # pitch_p_r = self.P(r_c_p_r).repeat_interleave(8, dim=1)
+        pitch_p_r = self.P(r_c_p_r).repeat_interleave(8, dim=1) # used to calculate pitch reconstruction loss
+        pitch_p_r_quan = quantize_f0_torch(pitch_p_r)[0]
 
-        return mel_output, pitch_p_repeat, rhythm, content, rhythm_r, content_r, pitch_p_r
+        return mel_output, pitch_p_repeat_quan, rhythm, content, rhythm_r, content_r, pitch_p_r_quan
+        # return mel_output, pitch_p_repeat, rhythm, content, rhythm_r, content_r, pitch_p_r
+
+
+
+
+
+
+

@@ -83,21 +83,26 @@ if __name__ == "__main__":
         for batch_id, data in enumerate(dataload, 1):
             global_step+=1
 
-            mel_in = data['melsp'].to(device)
+            mel_in_1 = data['melsp'].to(device)
             pitch_t = data['pitch'].to(device)
             len_org = data['len_org'].to(device)
             sp_id = data['sp_id'].to(device)
 
+            pitch_t_quan = quantize_f0_torch(pitch_t)[0]
+            interpLnr = InterpLnr()
+            mel_in = interpLnr(mel_in_1, len_org)
+
             # ---------------- generator train ----------------
 
-            mel_out, pitch_p, rhythm, content, rhythm_r, content_r, pitch_p_r = generator.forward(mel_in, sp_id)
+            mel_out, pitch_p_repeat_quan, rhythm, content, rhythm_r, content_r, pitch_p_r_quan = generator.forward(mel_in, sp_id)
 
             d_r_mel_in = discriminator.forward(mel_in)
             d_r_mel_out = discriminator.forward(mel_out)
 
             # ---------------- generator loss compute ----------------
 
-            recon_voice_loss, recon_pitch_loss, total_loss_g = compute_G_loss(config.opt, mel_in, pitch_t, mel_out, pitch_p, rhythm, content, rhythm_r, content_r, pitch_p_r, d_r_mel_out)
+            recon_voice_loss, recon_pitch_loss, total_loss_g = compute_G_loss(config.opt, mel_in, pitch_t_quan, mel_out, pitch_p_repeat_quan, rhythm, content, rhythm_r, content_r, pitch_p_r_quan, d_r_mel_out)
+
             optimizer_g.zero_grad()
             optimizer_d.zero_grad()
             total_loss_g.backward(retain_graph=True)

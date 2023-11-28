@@ -13,7 +13,14 @@ class pitch_predictor(nn.Module):
         r_c_s = torch.tensor(r_c_s, dtype=torch.float32)
 
         p = self.pitch_bid_LSTM(r_c_s)[0]
-        pitch_p = self.pitch_LSTM(p)[0]
+
+        p_forward = p[:, :, :32]
+        p_backward = p[:, :, 32:]
+
+        _p = torch.cat((p_forward[:, 7::8, :], p_backward[:, ::8, :]), dim=-1)
+
+        pitch_p = self.pitch_LSTM(_p)[0]
+
 
         return pitch_p
 
