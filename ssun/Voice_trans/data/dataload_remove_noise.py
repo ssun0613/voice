@@ -5,6 +5,11 @@ import torch
 from torch.utils import data
 from torch.utils.data.sampler import Sampler
 
+import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
+
+
 LABEL = {'africa': 0, 'australia': 1, 'canada' : 2, 'england' : 3, 'hongkong' : 4, 'us' : 5}
 
 class accent():
@@ -39,7 +44,8 @@ class accent():
         dataset_pitch = sorted(glob.glob(self.dataset_dir + 'pitch/*.npy'))
 
         # return dataset_mel, dataset_mfcc, dataset_pitch
-        return dataset_mel[0:20], dataset_mfcc[0:20], dataset_pitch[0:20]
+        # return dataset_mel[0:20], dataset_mfcc[0:20], dataset_pitch[0:20]
+        return dataset_mel[18:20], dataset_mfcc[18:20], dataset_pitch[18:20]
 
 class MyCollator(object):
     def __init__(self):

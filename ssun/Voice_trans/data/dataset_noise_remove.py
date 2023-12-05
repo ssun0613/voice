@@ -98,7 +98,9 @@ def pySTFT(x, fft_length=1024, hop_length=256):
 
     return np.abs(result)
 
+
 if __name__=='__main__':
+    remove_noise()
     path_1 = '/storage/mskim/English_voice/dataset_remove_noise/'
     dataset_path = sorted(glob.glob(path_1 + "wav/*.wav"))
     mel_basis = mel(sr=16000, n_fft=1024, fmin=0, fmax=8000, n_mels=80).T
