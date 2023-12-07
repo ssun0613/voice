@@ -1,9 +1,9 @@
 ----------------- Options ---------------
-               batch_size: 2                             	[default: 10]
+               batch_size: 2                             
                     beta1: 0.5                           
-      checkpoint_load_num: 99501                         	[default: 500]
-          checkpoint_name: pitch_lstm_quan               	[default: dis_star]
-           continue_train: True                          	[default: False]
+      checkpoint_load_num: 500                           
+          checkpoint_name: remove_noise                  	[default: dis_star]
+           continue_train: False                         
              dataset_name: dacon                         
              dataset_path: /storage/mskim/English_voice/ 
         dataset_path_test: /storage/mskim/English_voice/test/
@@ -25,7 +25,7 @@
                  samplier: 1                             
                 save_path: ./checkpoints/pre_test_dacon_voice_trans
            scheduler_name: cosine                        
-              tensor_name: pitch_lstm_quan_inter         	[default: dis_star]
+              tensor_name: remove_noise_2                	[default: dis_star]
      train_test_save_path: ./train_test/voice_trans      
                  use_cuda: True                          
              weight_decay: 5e-05                         

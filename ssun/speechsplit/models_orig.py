@@ -213,8 +213,7 @@ class Encoder_7(nn.Module):
         f0_forward = f0[:, :, :self.dim_neck_3]
         f0_backward = f0[:, :, self.dim_neck_3:]
 
-        codes_x = torch.cat((x_forward[:, self.freq - 1::self.freq, :],
-                             x_backward[:, ::self.freq, :]), dim=-1)
+        codes_x = torch.cat((x_forward[:, self.freq - 1::self.freq, :], x_backward[:, ::self.freq, :]), dim=-1)
 
         codes_f0 = torch.cat((f0_forward[:, self.freq_3 - 1::self.freq_3, :],
                               f0_backward[:, ::self.freq_3, :]), dim=-1)

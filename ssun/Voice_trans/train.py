@@ -29,11 +29,20 @@ def setup(opt):
     else:
         device = torch.device("cpu")
     # -------------------------------------------- setup dataload --------------------------------------------
+    # original dataset
+    # if not opt.debugging:
+    #     from ssun.Voice_trans.data.dataload_dacon import get_loader
+    # else:
+    #     from Voice_trans.data.dataload_dacon import get_loader
+    # dataload = get_loader(opt)
+
+    # remove noise dataset
     if not opt.debugging:
-        from ssun.Voice_trans.data.dataload_dacon import get_loader
+        from ssun.Voice_trans.data.dataload_remove_noise import get_loader
     else:
-        from Voice_trans.data.dataload_dacon import get_loader
+        from Voice_trans.data.dataload_remove_noise import get_loader
     dataload = get_loader(opt)
+
     # -------------------------------------------- setup network --------------------------------------------
     generator = G(opt, device).to(device)
     discriminator = D().to(device)  # star_gan

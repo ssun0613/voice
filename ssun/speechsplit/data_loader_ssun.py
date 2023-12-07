@@ -1,6 +1,6 @@
 import os
 import torch
-import pickle
+import glob
 import numpy as np
 from functools import partial
 from numpy.random import uniform
@@ -9,120 +9,47 @@ from multiprocessing import Process, Manager
 from torch.utils import data
 from torch.utils.data.sampler import Sampler
 
+LABEL = {'africa': 0, 'australia': 1, 'canada' : 2, 'england' : 3, 'hongkong' : 4, 'us' : 5}
+
 class Utterances(data.Dataset):
     def __init__(self, root_dir, feat_dir, mode):
-        self.root_dir = root_dir  # 'assets/spmel'
-        self.feat_dir = feat_dir  # 'assets/raptf0'
-        self.mode = mode  # 'train'
+        self.dataset_dir = '/storage/mskim/English_voice/dataset_remove_noise/'
         self.step = 20
         self.split = 0
 
-        metaname = os.path.join(self.root_dir, "train.pkl")  # 'assets/spmel/train.pkl'
-        meta = pickle.load(open(metaname, "rb"))
+        self.dataset_mel, self.dataset_pitch = self.data_load_npy()
+        self.dataset_size = len(self.dataset_mel)
 
-        # dataset = self.load_data_hr(meta)
-        dataset = self.load_data_ssun(meta)
+    def data_sp_id(self, label_path):
+        data_sp_id = label_path.split('/')[-1].split('_')[0]
+        data_sp_id_lower = data_sp_id.lower()
+        sp_id = np.zeros(len(LABEL))
+        sp_id[LABEL[data_sp_id_lower]] = 1.0
 
-        # very important to do dataset = list(dataset)
-        if mode == 'train':
-            self.train_dataset = dataset
-            self.num_tokens = len(self.train_dataset)
-        elif mode == 'test':
-            self.test_dataset = dataset
-            self.num_tokens = len(self.test_dataset)
-        else:
-            raise ValueError
+        return sp_id
 
-    def load_data_hr(self, submeta):
-        dataset = []
+    def data_load_npy(self):
+        mel_data=[]
+        pitch_data=[]
+        dataset_mel = sorted(glob.glob(self.dataset_dir + 'mel/*.npy'))
+        dataset_pitch = sorted(glob.glob(self.dataset_dir + 'pitch/*.npy'))
 
-        for k, sbmt in enumerate(submeta):
-            uttrs = len(sbmt) * [None]
-            # fill in speaker id and embedding
-            uttrs[0] = sbmt[0]  # speaker id
-            uttrs[1] = sbmt[1]  # embedding
+        mel_data.append(dataset_mel[0])
+        mel_data.append(dataset_mel[-1])
 
-            # fill in data
-            sp_tmp = np.load(os.path.join(self.root_dir, sbmt[2])) # sp_tmp.shape : [0 --> (18877, 80)], [1 --> (18902, 80)]
-            f0_tmp = np.load(os.path.join(self.feat_dir, sbmt[2])) # f0_tmp.shape : [0 --> (18877,)], [1 --> (18902,)]
+        pitch_data.append(dataset_pitch[0])
+        pitch_data.append(dataset_pitch[-1])
 
-            if self.mode == 'train':
-                sp_tmp = sp_tmp[self.split:, :]
-                f0_tmp = f0_tmp[self.split:]
-            elif self.mode == 'test':
-                sp_tmp = sp_tmp[:self.split, :]
-                f0_tmp = f0_tmp[:self.split]
-            else:
-                raise ValueError
-            uttrs[2] = (sp_tmp, f0_tmp)
-            dataset.append(uttrs)
-
-        return dataset
-
-    def load_data_ssun(self, submeta):
-        dataset = []
-
-        for k, sbmt in enumerate(submeta):
-            # sbmt[0] = speaker id, sbmt[1] = embedding, sbmt[2] = data_path
-            uttrs = len(sbmt) * [None]
-
-            # fill in speaker id and embedding
-            # sbmt[0] = speaker id, sbmt[1] = embedding, sbmt[2] = data_path
-            uttrs[0] = sbmt[0]  # speaker id
-            uttrs[1] = sbmt[1]  # embedding
-
-            # fill in data
-            sp_tmp = np.load(os.path.join(self.root_dir, sbmt[2])) # sp_tmp.shape : [0 --> (18877, 80)], [1 --> (18902, 80)]
-            f0_tmp = np.load(os.path.join(self.feat_dir, sbmt[2])) # f0_tmp.shape : [0 --> (18877,)], [1 --> (18902,)]
-
-            if self.mode == 'train':
-                sp_tmp = sp_tmp[self.split:, :]
-                f0_tmp = f0_tmp[self.split:]
-            elif self.mode == 'test':
-                sp_tmp = sp_tmp[:self.split, :]
-                f0_tmp = f0_tmp[:self.split]
-            else:
-                raise ValueError
-            uttrs[2] = (sp_tmp, f0_tmp) # if k==0, uttrs[2][0].shape : (18877,80), uttrs[2][1].shape : (18877,)
-            dataset.append(uttrs)
-
-        return dataset
-
-    def load_data(self, submeta, dataset, idx_offset, mode):
-        for k, sbmt in enumerate(submeta):
-            uttrs = len(sbmt) * [None]
-            # fill in speaker id and embedding
-            uttrs[0] = sbmt[0]  # speaker id
-            uttrs[1] = sbmt[1]  # embedding
-
-            # fill in data
-            sp_tmp = np.load(os.path.join(self.root_dir, sbmt[2])) # sp_tmp.shape : [0 --> (18877, 80)], [1 --> (18902, 80)]
-            f0_tmp = np.load(os.path.join(self.feat_dir, sbmt[2])) # f0_tmp.shape : [0 --> (18877,)], [1 --> (18902,)]
-
-            if self.mode == 'train':
-                sp_tmp = sp_tmp[self.split:, :]
-                f0_tmp = f0_tmp[self.split:]
-            elif self.mode == 'test':
-                sp_tmp = sp_tmp[:self.split, :]
-                f0_tmp = f0_tmp[:self.split]
-            else:
-                raise ValueError
-            uttrs[2] = (sp_tmp, f0_tmp)
-            dataset[idx_offset + k] = uttrs
-
+        return mel_data, pitch_data
     def __getitem__(self, index):
-        dataset = self.train_dataset if self.mode == 'train' else self.test_dataset
-
-        list_uttrs = dataset[index]  # len(list_uttrs)=3,
-        spk_id_org = list_uttrs[0]  # speaker id, spk_id_org : 'p226'
-        emb_org = list_uttrs[1]  # embedding, emb_org.shape : (82,)
-
-        melsp, f0_org = list_uttrs[2]  # melsp.shape : (18877, 80) , f0_org.shape : (18877,)
+        melsp = np.load(self.dataset_mel[index % self.dataset_size])
+        f0_org = np.load(self.dataset_pitch[index % self.dataset_size])
+        emb_org = self.data_sp_id(self.dataset_mel[index % self.dataset_size])
 
         return melsp, emb_org, f0_org
 
     def __len__(self):
-        return self.num_tokens
+        return self.dataset_size
 
 class MyCollator(object):
     def __init__(self, hparams):
@@ -184,10 +111,6 @@ def get_loader(hparams):
 
     dataset = Utterances(hparams.root_dir, hparams.feat_dir, hparams.mode)
 
-    # my_collator = MyCollator(hparams)
-
-    # sampler = MultiSampler(len(dataset), hparams.samplier, shuffle=hparams.shuffle)
-
     worker_init_fn = lambda x: np.random.seed((torch.initial_seed()) % (2 ** 32))
 
     data_loader = data.DataLoader(dataset=dataset, batch_size=hparams.batch_size, sampler=MultiSampler(len(dataset), hparams.samplier, shuffle=hparams.shuffle),
@@ -201,7 +124,6 @@ def get_loader(hparams):
 
 if __name__ == "__main__":
     from hparams import hparams
-
-    # test = Utterances(root_dir='assets/spmel', feat_dir='assets/raptf0', mode='train')
-
     data_load = get_loader(hparams)
+
+    melsp, emb_org, f0_orgd = Utterances(hparams.root_dir, hparams.feat_dir, hparams.mode).__getitem__(0)

@@ -6,10 +6,13 @@ from librosa.filters import mel
 import glob
 from scipy import signal
 
+import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
 from numpy.random import RandomState
 from pysptk import sptk
-import pyworld as pw
 from sklearn.preprocessing import StandardScaler
+
 
 def normalize(in_dir, mean, std):
     max_value = np.finfo(np.float64).min
@@ -53,12 +56,13 @@ if __name__=='__main__':
     hop_length =256
     b, a = signal.butter(N=5, Wn=30, fs=fs,btype='high')
 
-    os.makedirs((os.path.join(path, "new/make_pitch(only_pitch_rapt)")), exist_ok=True)
+    # os.makedirs((os.path.join(path, "new/make_pitch(only_pitch_rapt)")), exist_ok=True)
     pitch_scaler = StandardScaler()
 
     for index in range(0, len(dataset_path)):
         data = dataset_path[index % len(dataset_path)]
         data_wav, data_sr = librosa.load(data, sr=fs)
+
         assert data_sr!=None, "sr is None, cheak"
 
         # _f0, t = pw.dio(data_wav.astype(np.float64), fs, frame_period=hop_length / fs * 1000)

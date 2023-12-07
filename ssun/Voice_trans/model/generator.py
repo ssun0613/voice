@@ -51,7 +51,6 @@ class generator(nn.Module):
         pitch_p_r_quan = quantize_f0_torch(pitch_p_r)[0]
 
         return mel_output, pitch_p_repeat_quan, rhythm, content, rhythm_r, content_r, pitch_p_r_quan
-        # return mel_output, pitch_p_repeat, rhythm, content, rhythm_r, content_r, pitch_p_r
 
 
 

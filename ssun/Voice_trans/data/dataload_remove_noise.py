@@ -14,7 +14,7 @@ LABEL = {'africa': 0, 'australia': 1, 'canada' : 2, 'england' : 3, 'hongkong' : 
 
 class accent():
     def __init__(self, dataset_path, is_training=True):
-        self.dataset_dir = '/storage/mskim/English_voice/dataset_remove_noise/'
+        self.dataset_dir = dataset_path
         self.is_training = is_training
         self.dataset_mel, self.dataset_mfcc, self.dataset_pitch = self.data_load_npy()
         self.dataset_size = len(self.dataset_mel)
@@ -44,8 +44,7 @@ class accent():
         dataset_pitch = sorted(glob.glob(self.dataset_dir + 'pitch/*.npy'))
 
         # return dataset_mel, dataset_mfcc, dataset_pitch
-        # return dataset_mel[0:20], dataset_mfcc[0:20], dataset_pitch[0:20]
-        return dataset_mel[18:20], dataset_mfcc[18:20], dataset_pitch[18:20]
+        return dataset_mel[0:20], dataset_mfcc[0:20], dataset_pitch[0:20]
 
 class MyCollator(object):
     def __init__(self):
@@ -58,17 +57,7 @@ class MyCollator(object):
         for token in batch:
             mel, mfcc, pitch, sp_id = token
             len_crop = np.random.randint(self.min_len_seq, self.max_len_seq + 1, size=2)
-            if len(mel) - len_crop[0] == 0:
-                len_crop = np.random.randint(self.min_len_seq, self.max_len_seq + 1, size=2)
-                if len(mel) - len_crop[0] > 0:
-                    left = np.random.randint(0, len(mel) - len_crop[0], size=2)
-                elif len(mel) - len_crop[0] < 0:
-                    left = np.random.randint(0, len_crop[0] - len(mel), size=2)
-            else:
-                if len(mel) - len_crop[0] > 0:
-                    left = np.random.randint(0, len(mel) - len_crop[0], size=2)
-                elif len(mel) - len_crop[0] < 0:
-                    left = np.random.randint(0, len_crop[0] - len(mel), size=2)
+            left = np.random.randint(0, len(mel) - len_crop[0], size=2)
 
             mel_crop = mel[left[0]:left[0] + len_crop[0], :]
             mfcc_crop = mfcc[left[0]:left[0] + len_crop[0], :]
@@ -80,7 +69,6 @@ class MyCollator(object):
             mel_pad = np.pad(mel_clip, ((0, self.max_len_pad - mel_clip.shape[0]), (0, 0)), 'constant')
             mfcc_pad = np.pad(mfcc_clip, ((0, self.max_len_pad - mfcc_clip.shape[0]), (0, 0)), 'constant')
             pitch_pad = np.pad(pitch_crop[:, np.newaxis], ((0, self.max_len_pad - pitch_crop.shape[0]), (0, 0)), 'constant')
-            # pitch_pad = np.pad(pitch_crop[:, np.newaxis], ((0, self.max_len_pad - pitch_crop.shape[0]), (0, 0)), 'constant', constant_values=-1e10)
 
             new_batch.append((mel_pad, mfcc_pad, pitch_pad, len_crop[0], sp_id))
 

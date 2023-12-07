@@ -3,52 +3,85 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class Conv_layer(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=None, dilation=1, bias=True):
+    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=None, dilation=1, bias=True, w_init_gain='linear'):
         super(Conv_layer, self).__init__()
         if padding is None:
             assert(kernel_size % 2 == 1)
             padding = int(dilation * (kernel_size - 1) / 2)
         self.Conv_layer = nn.Conv1d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
-
+        torch.nn.init.xavier_uniform_(self.Conv_layer.weight, gain=torch.nn.init.calculate_gain(w_init_gain))
     def forward(self, params):
         return self.Conv_layer(params)
 
 class Er(nn.Module):
     def __init__(self):
         super(Er, self).__init__()
-        self.conv_r = nn.Sequential(Conv_layer(in_channels = 80, out_channels = 128, kernel_size=5, stride=1, padding=2, dilation=1),
-                                    nn.GroupNorm(num_groups = 8, num_channels = 128))
-        self.lstm_r = nn.LSTM(input_size = 128, hidden_size = 1, num_layers = 1, batch_first = True, bidirectional = True)
+        self.freq_r = 8
+        self.dim_neck_r = 1
+        self.dim_enc_r = 128
+
+        self.dim_freq = 80
+        self.chs_grp = 16
+
+        convolutions = []
+        for i in range(1):
+            conv_layer = nn.Sequential(
+                Conv_layer(self.dim_freq if i == 0 else self.dim_enc_r,
+                         self.dim_enc_r,
+                         kernel_size=5, stride=1,
+                         padding=2,
+                         dilation=1, w_init_gain='relu'),
+                nn.GroupNorm(self.dim_enc_r // self.chs_grp, self.dim_enc_r))
+            convolutions.append(conv_layer)
+        self.convolutions_r = nn.ModuleList(convolutions)
+        self.lstm_r = nn.LSTM(self.dim_enc_r, self.dim_neck_r, 1, batch_first=True, bidirectional=True)
 
     def forward(self, r):
-        for conv_r in self.conv_r:
+        for conv_r in self.convolutions_r:
             r = F.relu(conv_r(r))
         r = r.transpose(1, 2)
 
         self.lstm_r.flatten_parameters()
         outputs = self.lstm_r(r)[0]
 
-        out_forward = outputs[:, :, :1]
-        out_backward = outputs[:, :, 1:]
+        out_forward = outputs[:, :, :self.dim_neck_r]
+        out_backward = outputs[:, :, self.dim_neck_r:]
 
-        codes_r = torch.cat((out_forward[:, 7::8, :], out_backward[:, ::8, :]), dim=-1)
+        codes_r = torch.cat((out_forward[:, self.freq_r-1::self.freq_r, :], out_backward[:, ::self.freq_r, :]), dim=-1)
 
         return codes_r
 
 class Ec(nn.Module):
     def __init__(self):
         super(Ec, self).__init__()
+        self.dim_freq = 80
+        self.dim_f0 = 257
+        self.chs_grp = 16
         self.register_buffer('len_org', torch.tensor(192))
+
+        # hparams that Ec use
+        self.freq_c = 8
+        self.dim_neck_c = 8
+        self.dim_enc_c = 512
+
         # Ec architecture
-        self.conv_c = nn.Sequential(Conv_layer(in_channels = 80, out_channels = 512, kernel_size=5, stride=1, padding=2, dilation=1),
-                                    Conv_layer(in_channels = 512, out_channels = 512, kernel_size=5, stride=1, padding=2, dilation=1),
-                                    Conv_layer(in_channels = 512, out_channels = 512, kernel_size=5, stride=1, padding=2, dilation=1),
-                                    nn.GroupNorm(num_groups = 32, num_channels = 512))
-        self.lstm_c = nn.LSTM(input_size = 512, hidden_size = 8, num_layers = 1, batch_first = True, bidirectional = True)
+        convolutions = []
+        for i in range(3):
+            conv_layer = nn.Sequential(
+                Conv_layer(self.dim_freq if i == 0 else self.dim_enc_c,
+                         self.dim_enc_c,
+                         kernel_size=5, stride=1,
+                         padding=2,
+                         dilation=1, w_init_gain='relu'),
+                nn.GroupNorm(self.dim_enc_c // self.chs_grp, self.dim_enc_c))
+            convolutions.append(conv_layer)
+        self.convolutions_c = nn.ModuleList(convolutions)
+
+        self.lstm_c = nn.LSTM(self.dim_enc_c, self.dim_neck_c, 2, batch_first=True, bidirectional=True)
         self.interp = InterpLnr()
 
     def forward(self, c):
-        for conv_c in self.conv_c:
+        for conv_c in self.convolutions_c:
             c = F.relu(conv_c(c))
             c = c.transpose(1, 2)
             c = self.interp(c, self.len_org.expand(c.size(0)))
@@ -57,10 +90,10 @@ class Ec(nn.Module):
         c = c.transpose(1, 2)
         c = self.lstm_c(c)[0]
 
-        c_forward = c[:, :, :8]
-        c_backward = c[:, :, 8:]
+        c_forward = c[:, :, :self.dim_neck_c]
+        c_backward = c[:, :, self.dim_neck_c:]
 
-        codes_c = torch.cat((c_forward[:, 7::8, :], c_backward[:, ::8, :]), dim=-1) # codes_c.shape : torch.Size([2, 24, 16])
+        codes_c = torch.cat((c_forward[:, self.freq_c - 1::self.freq_c, :], c_backward[:, ::self.freq_c, :]), dim=-1) # codes_c.shape : torch.Size([2, 24, 16])
 
         return codes_c
 

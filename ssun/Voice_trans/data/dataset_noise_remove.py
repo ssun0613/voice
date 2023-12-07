@@ -1,3 +1,10 @@
+# mel_nrw = librosa.amplitude_to_db(np.abs(librosa.stft(data_nrw)), ref=np.max)
+# mel_orig = librosa.amplitude_to_db(np.abs(librosa.stft(data_wav)), ref=np.max)
+# plt.subplot(2, 1, 1)
+# plt.imshow(mel_nrw[::-1, :])
+# plt.subplot(2, 1, 2)
+# plt.imshow(mel_orig[::-1, :])
+
 import sys,os
 sys.path.append("../..")
 import numpy as np
@@ -22,7 +29,7 @@ def remove_noise():
     dataset_path = sorted(glob.glob('/storage/mskim/English_voice/train/' + "*/*.wav"))
     path = '/storage/mskim/English_voice/make_dataset/'
     path_1 = '/storage/mskim/English_voice/'
-    fs = 16000
+    fs = 22050
     # ------------------------------------------------------------------------------------------
 
     os.makedirs((os.path.join(path, "noise_remove")), exist_ok=True)
@@ -42,7 +49,7 @@ def remove_noise():
         # ------------------------------------------------------------------------------------------
         audio_chunks = split_on_silence(sound,
                                         min_silence_len=100,
-                                        silence_thresh=-35,
+                                        silence_thresh=-55,
                                         keep_silence=50)
         # ------------------------------------------------------------------------------------------
         data_nrw = 0
@@ -72,8 +79,8 @@ def remove_noise():
             error_list.append(error_path)
             error_messeage.append(e)
 
-        np.save(path_1 + "dataset_remove_noise/wav/error_list", error_list)
-        np.save(path_1 + "dataset_remove_noise/wav/error_messeage", error_messeage)
+        np.save(path_1 + "dataset_remove_noise/error_list_55", error_list)
+        np.save(path_1 + "dataset_remove_noise/error_messeage_55", error_messeage)
 
 def speaker_normalization(f0, index_nonzero, mean_f0, std_f0):
     # f0 is logf0
@@ -103,9 +110,9 @@ if __name__=='__main__':
     remove_noise()
     path_1 = '/storage/mskim/English_voice/dataset_remove_noise/'
     dataset_path = sorted(glob.glob(path_1 + "wav/*.wav"))
-    mel_basis = mel(sr=16000, n_fft=1024, fmin=0, fmax=8000, n_mels=80).T
+    mel_basis = mel(sr=22050, n_fft=1024, fmin=0, fmax=8000, n_mels=80).T
     min_level = np.exp(-100 / 20 * np.log(10))
-    fs = 16000
+    fs = 22050
     lo, hi = 50, 600
     b, a = signal.butter(N=5, Wn=30, fs=fs,btype='high')
 

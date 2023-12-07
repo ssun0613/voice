@@ -10,8 +10,13 @@ class Decoder_s(nn.Module):
 
 
     def forward(self, x):
-
         output = self.lstm_d(x)[0]
         decoder_output = self.linear(output)
 
         return decoder_output
+
+if __name__ == '__main__':
+    model = Decoder_s()
+    x = torch.rand(10, 192, 19)
+    pitch_p = model.forward(x)
+

@@ -56,7 +56,7 @@ def quantize_f0_torch(x, num_bins=256):
     uv = (x <= 0)
     x[uv] = 0
     assert (x >= 0).all() and (x <= 1).all()
-    x = torch.round(x * (num_bins - 1)) # 정수화 해주는 것, 연속신호를 이산신호로 바꿔주는 것
+    x = torch.round(x * (num_bins - 1))
     x = x + 1
     x[uv] = 0
     enc = torch.zeros((x.size(0), num_bins + 1), device=x.device)

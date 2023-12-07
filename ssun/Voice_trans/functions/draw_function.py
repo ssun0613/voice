@@ -1,6 +1,6 @@
 import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pylab as plt
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
 
 
 def tensorboard_draw(writer, mel_in, mel_out, recon_voice_loss, recon_pitch_loss, total_loss_g, total_loss_d, global_step):

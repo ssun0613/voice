@@ -10,9 +10,9 @@ class speechsplit(nn.Module):
         self.Ec_Ef = Ec_Ef()
         self.D = D()
 
-        self.freq_c = hparams.freq
-        self.freq_r = hparams.freq_2
-        self.freq_f = hparams.freq_3
+        self.freq_c = hparams.freq # 8
+        self.freq_r = hparams.freq_2 # 8
+        self.freq_f = hparams.freq_3 # 8
 
     def forward(self, x_f0, x_org, c_trg):
         # input : x_f0_intrp_org.shape : torch.Size([2, 192, 337]), x_real_org.shape : torch.Size([2, 192, 80]), emb_org.shape : torch.Size([2, 82])
@@ -50,12 +50,12 @@ class Conv_layer(nn.Module):
 class Er(nn.Module):
     def __init__(self):
         super().__init__()
-        self.freq_r = hparams.freq_2
-        self.dim_neck_r = hparams.dim_neck_2
-        self.dim_enc_r = hparams.dim_enc_2
+        self.freq_r = hparams.freq_2 # 8
+        self.dim_neck_r = hparams.dim_neck_2 # 1
+        self.dim_enc_r = hparams.dim_enc_2 # 128
 
-        self.dim_freq = hparams.dim_freq
-        self.chs_grp = hparams.chs_grp
+        self.dim_freq = hparams.dim_freq # 80
+        self.chs_grp = hparams.chs_grp # 16
 
         self.conv_r = nn.Sequential(Conv_layer(self.dim_freq, self.dim_enc_r, kernel_size=5, stride=1, padding=2, dilation=1),
                                     nn.GroupNorm(self.dim_enc_r // self.chs_grp, self.dim_enc_r))
@@ -81,20 +81,20 @@ class Er(nn.Module):
 class Ec_Ef(nn.Module):
     def __init__(self):
         super().__init__()
-        self.dim_freq = hparams.dim_freq
-        self.dim_f0 = hparams.dim_f0
-        self.chs_grp = hparams.chs_grp
-        self.register_buffer('len_org', torch.tensor(hparams.max_len_pad))
+        self.dim_freq = hparams.dim_freq # 80
+        self.dim_f0 = hparams.dim_f0 # 257
+        self.chs_grp = hparams.chs_grp # 16
+        self.register_buffer('len_org', torch.tensor(hparams.max_len_pad)) # hparams.max_len_pad 192
 
         # hparams that Ec use
-        self.freq_c = hparams.freq
-        self.dim_neck_c = hparams.dim_neck
-        self.dim_enc_c = hparams.dim_enc
+        self.freq_c = hparams.freq # 8
+        self.dim_neck_c = hparams.dim_neck # 8
+        self.dim_enc_c = hparams.dim_enc # 512
 
         # hparams that Ef use
-        self.freq_f = hparams.freq_3
-        self.dim_neck_f = hparams.dim_neck_3
-        self.dim_enc_f = hparams.dim_enc_3
+        self.freq_f = hparams.freq_3 # 8
+        self.dim_neck_f = hparams.dim_neck_3 # 32
+        self.dim_enc_f = hparams.dim_enc_3 # 256
 
         # Ec architecture
         self.conv_c = nn.Sequential(Conv_layer(self.dim_freq, self.dim_enc_c, kernel_size=5, stride=1, padding=2, dilation=1),
@@ -125,7 +125,6 @@ class Ec_Ef(nn.Module):
             c_f = c_f.transpose(1, 2)
             c = c_f[:, :self.dim_enc_c, :]
             f = c_f[:, self.dim_enc_c:, :]
-            print('end')
 
         c_f = c_f.transpose(1, 2)
         c = c_f[:, :, :self.dim_enc_c]
@@ -148,17 +147,17 @@ class Ec_Ef(nn.Module):
 class D(nn.Module):
     def __init__(self):
         super().__init__()
-        self.dim_neck = hparams.dim_neck
-        self.dim_neck_2 = hparams.dim_neck_2
-        self.dim_emb = hparams.dim_spk_emb
-        self.dim_freq = hparams.dim_freq
-        self.dim_neck_3 = hparams.dim_neck_3
+        self.dim_neck = hparams.dim_neck # 8
+        self.dim_neck_2 = hparams.dim_neck_2 # 1
+        self.dim_emb = hparams.dim_spk_emb # 83
+        self.dim_freq = hparams.dim_freq # 8
+        self.dim_neck_3 = hparams.dim_neck_3 # 32
 
-        self.lstm_d = nn.LSTM(self.dim_neck * 2 + self.dim_neck_2 * 2 + self.dim_neck_3 * 2 + self.dim_emb, 512, 3, batch_first=True, bidirectional=True)
+        self.lstm_d = nn.LSTM(88, 512, 3, batch_first=True, bidirectional=True)
         self.linear = nn.Linear(1024, self.dim_freq, bias=True)
 
     def forward(self, x):
-        output = self.lstm_d(x)[0]
+        output = self.lstm_d(x.float())[0]
         decoder_output = self.linear(output)
 
         return decoder_output
@@ -166,11 +165,11 @@ class D(nn.Module):
 class InterpLnr(nn.Module):
     def __init__(self):
         super().__init__()
-        self.max_len_seq = hparams.max_len_seq
-        self.max_len_pad = hparams.max_len_pad
+        self.max_len_seq = hparams.max_len_seq # 128
+        self.max_len_pad = hparams.max_len_pad # 192
 
-        self.min_len_seg = hparams.min_len_seg
-        self.max_len_seg = hparams.max_len_seg
+        self.min_len_seg = hparams.min_len_seg # 19
+        self.max_len_seg = hparams.max_len_seg # 32
 
         self.max_num_seg = self.max_len_seq // self.min_len_seg + 1
 
