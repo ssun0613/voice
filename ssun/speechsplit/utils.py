@@ -2,10 +2,11 @@ import numpy as np
 from scipy import signal
 from scipy.signal import get_window
 
-import matplotlib
 import torch
-matplotlib.use("Agg")
-import matplotlib.pylab as plt
+import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
+
 
 def butter_highpass(cutoff, fs, order=5):
     nyq = 0.5 * fs

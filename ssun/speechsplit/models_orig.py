@@ -232,8 +232,7 @@ class Decoder_3(nn.Module):
         self.dim_freq = hparams.dim_freq
         self.dim_neck_3 = hparams.dim_neck_3
 
-        self.lstm = nn.LSTM(self.dim_neck * 2 + self.dim_neck_2 * 2 + self.dim_neck_3 * 2 + self.dim_emb,
-                            512, 3, batch_first=True, bidirectional=True)
+        self.lstm = nn.LSTM(88, 512, 3, batch_first=True, bidirectional=True)
 
         self.linear_projection = LinearNorm(1024, self.dim_freq)
 

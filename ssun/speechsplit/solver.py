@@ -65,7 +65,7 @@ class Solver():
 
     def build_tensorboard(self):
         from torch.utils.tensorboard import SummaryWriter
-        self.writer = SummaryWriter('./run/dacon_data')
+        self.writer = SummaryWriter(self.log_dir)
 
     def reset_grad(self):
         self.g_optimizer.zero_grad()
@@ -138,5 +138,5 @@ class Solver():
             if i % 200 == 0:
                 for tag, value in loss.items():
                     self.writer.add_scalar(tag, value, i + 1)
-                self.writer.add_figure('generated/mel_spectorgram_num_iters',plot_spectrogram(x_identic[0].squeeze(0).cpu().detach().numpy()), i)
-                self.writer.add_figure('gt/mel_spectorgram_num_iters',plot_spectrogram(x_real_org[0].squeeze(0).cpu().detach().numpy()), i)
+                self.writer.add_figure('generated/mel_spectorgram_num_iters', plot_spectrogram(x_identic[0].squeeze(0).cpu().detach().numpy()), i)
+                self.writer.add_figure('gt/mel_spectorgram_num_iters', plot_spectrogram(x_real_org[0].squeeze(0).cpu().detach().numpy()), i)

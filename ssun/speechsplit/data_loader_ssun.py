@@ -14,6 +14,7 @@ LABEL = {'africa': 0, 'australia': 1, 'canada' : 2, 'england' : 3, 'hongkong' : 
 class Utterances(data.Dataset):
     def __init__(self, root_dir, feat_dir, mode):
         self.dataset_dir = '/storage/mskim/English_voice/dataset_remove_noise/'
+        # self.dataset_dir = '/storage/mskim/English_voice/make_dataset/data_nan_expect/'
         self.step = 20
         self.split = 0
 
@@ -31,8 +32,10 @@ class Utterances(data.Dataset):
     def data_load_npy(self):
         mel_data=[]
         pitch_data=[]
+
         dataset_mel = sorted(glob.glob(self.dataset_dir + 'mel/*.npy'))
         dataset_pitch = sorted(glob.glob(self.dataset_dir + 'pitch/*.npy'))
+
 
         mel_data.append(dataset_mel[0])
         mel_data.append(dataset_mel[-1])
@@ -80,10 +83,10 @@ class MyCollator(object):
         batch = new_batch
 
         a, b, c, d = zip(*batch) # len(a)=2, a[0].shape : (self.max_len_pad, 80) | len(b)=2, b[0].shape : (82,) | len(c)=2, c[0].shape : (self.max_len_pad, 1) | len(d)=2, d[0]=len_crop[0]
-        melsp = torch.from_numpy(np.stack(a, axis=0)) # np.stack(a, axis=0).shape : (2, self.max_len_pad, 80), melsp.shape : torch.Size([2, self.max_len_pad, 80])
-        spk_emb = torch.from_numpy(np.stack(b, axis=0)) # np.stack(b, axis=0).shape : (2, 82), spk_emb.shape : torch.Size([2, 82])
-        pitch = torch.from_numpy(np.stack(c, axis=0)) # np.stack(c, axis=0).shape : (2, self.max_len_pad, 1), pitch.shape : torch.Size([2, 192, 1])
-        len_org = torch.from_numpy(np.stack(d, axis=0)) # np.stack(d, axis=0).shape : (2, ), len_org.shape : torch.Size([2])
+        melsp = torch.from_numpy(np.stack(a, axis=0)).float() # np.stack(a, axis=0).shape : (2, self.max_len_pad, 80), melsp.shape : torch.Size([2, self.max_len_pad, 80])
+        spk_emb = torch.from_numpy(np.stack(b, axis=0)).float() # np.stack(b, axis=0).shape : (2, 82), spk_emb.shape : torch.Size([2, 82])
+        pitch = torch.from_numpy(np.stack(c, axis=0)).float() # np.stack(c, axis=0).shape : (2, self.max_len_pad, 1), pitch.shape : torch.Size([2, 192, 1])
+        len_org = torch.from_numpy(np.stack(d, axis=0)).float() # np.stack(d, axis=0).shape : (2, ), len_org.shape : torch.Size([2])
 
         return melsp, spk_emb, pitch, len_org
 
