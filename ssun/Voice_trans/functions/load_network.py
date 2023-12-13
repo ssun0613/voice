@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 
-def load_networks(net, checkpoint_load_num, device, net_name, weight_path=None):
-    load_filename = '{}.pth'.format(checkpoint_load_num)
+def load_networks(net, checkpoint_name, device, net_name, weight_path=None):
+    load_filename = '{}.pth'.format(checkpoint_name)
     if weight_path is None:
         ValueError('Should set the weight_path, which is the path to the folder including weights')
     else:

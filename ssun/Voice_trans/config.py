@@ -30,7 +30,7 @@ class Config:
         self.parser.add_argument('--tensor_name', type=str, default='dis_star')
         self.parser.add_argument('--checkpoint_name', type=str, default='dis_star')
         self.parser.add_argument('--continue_train', type=bool, default=False)
-        self.parser.add_argument('--epochs', type=int, default=100)
+        self.parser.add_argument('--epochs', type=int, default=1000000)
         self.parser.add_argument('--checkpoint_load_num', type=int, default=500)
 
         parser, _ = self.parser.parse_known_args()

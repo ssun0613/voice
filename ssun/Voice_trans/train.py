@@ -23,7 +23,7 @@ def setup(opt):
     #-------------------------------------------- setup device --------------------------------------------
     if len(opt.gpu_id) != 0:
         if not opt.debugging:
-            device = torch.device("cpu")
+            device = torch.device("cuda:{}".format(opt.gpu_id) if torch.cuda.is_available() else "cpu")
         else:
             device = torch.device("cuda:{}".format(opt.gpu_id) if torch.cuda.is_available() else "cpu")
     else:
@@ -44,12 +44,12 @@ def setup(opt):
     dataload = get_loader(opt)
 
     # -------------------------------------------- setup network --------------------------------------------
-    generator = G(opt, device).to(device)
+    generator = G(opt).to(device)
     discriminator = D().to(device)  # star_gan
 
     if opt.continue_train:
-        generator = load_networks(generator, opt.checkpoint_load_num, device, net_name='generator', weight_path= "/storage/mskim/checkpoint/{}/".format(opt.checkpoint_name))
-        discriminator = load_networks(discriminator, opt.checkpoint_load_num, device, net_name='discriminator', weight_path= "/storage/mskim/checkpoint/{}/".format(opt.checkpoint_name))
+        generator = load_networks(generator, opt.checkpoint_name, device, net_name='generator', weight_path= "/storage/mskim/checkpoint/")
+        discriminator = load_networks(discriminator, opt.checkpoint_name, device, net_name='discriminator', weight_path= "/storage/mskim/checkpoint/")
     # -------------------------------------------- setup optimizer --------------------------------------------
     if opt.optimizer_name == 'Adam':
         optimizer_g = torch.optim.Adam(generator.parameters(), lr=opt.lr)
@@ -86,65 +86,65 @@ if __name__ == "__main__":
     device, generator, discriminator, dataload, optimizer_g, optimizer_d, scheduler_g, scheduler_d = setup(config.opt)
     print(device)
 
-    global_step = 0
-    for curr_epoch in range(config.opt.epochs):
-        print("--------------------------------------[ Epoch : {} ]-------------------------------------".format(curr_epoch+1))
-        for batch_id, data in enumerate(dataload, 1):
-            global_step+=1
+    try:
+        global_step = 0
+        for curr_epoch in range(config.opt.epochs):
+            print("--------------------------------------[ Epoch : {} ]-------------------------------------".format(curr_epoch+1))
+            for batch_id, data in enumerate(dataload, 1):
+                global_step+=1
 
-            mel_in_1 = data['melsp'].to(device)
-            pitch_t = data['pitch'].to(device)
-            len_org = data['len_org'].to(device)
-            sp_id = data['sp_id'].to(device)
+                mel_in = data['melsp'].to(device)
+                pitch_t = data['pitch'].to(device)
+                len_org = data['len_org'].to(device)
+                sp_id = data['sp_id'].to(device)
 
-            pitch_t_quan = quantize_f0_torch(pitch_t)[0]
-            interpLnr = InterpLnr()
-            mel_in = interpLnr(mel_in_1, len_org)
+                pitch_t_quan = quantize_f0_torch(pitch_t)[0]
 
-            # ---------------- generator train ----------------
+                # ---------------- generator train ----------------
 
-            mel_out, pitch_p_repeat_quan, rhythm, content, rhythm_r, content_r, pitch_p_r_quan = generator.forward(mel_in, sp_id)
+                mel_out, pitch_p_repeat_quan, rhythm, content, rhythm_r, content_r, pitch_p_r_quan = generator.forward(mel_in, len_org, sp_id)
 
-            d_r_mel_in = discriminator.forward(mel_in)
-            d_r_mel_out = discriminator.forward(mel_out)
-
-            # ---------------- generator loss compute ----------------
-
-            recon_voice_loss, recon_pitch_loss, total_loss_g = compute_G_loss(config.opt, mel_in, pitch_t_quan, mel_out, pitch_p_repeat_quan, rhythm, content, rhythm_r, content_r, pitch_p_r_quan, d_r_mel_out)
-
-            optimizer_g.zero_grad()
-            optimizer_d.zero_grad()
-            total_loss_g.backward(retain_graph=True)
-            optimizer_g.step()
-
-            if batch_id % 5000 == 0:
-                # ---------------- discriminator train ----------------
                 d_r_mel_in = discriminator.forward(mel_in)
-                d_r_mel_out = discriminator.forward(mel_out.detach())
+                d_r_mel_out = discriminator.forward(mel_out)
 
-                # ---------------- discriminator loss compute ----------------
+                # ---------------- generator loss compute ----------------
 
-                total_loss_d = compute_D_loss(d_r_mel_in, d_r_mel_out)
-                total_loss_d = total_loss_d * 100
+                recon_voice_loss, recon_pitch_loss, total_loss_g = compute_G_loss(config.opt, mel_in, pitch_t_quan, mel_out, pitch_p_repeat_quan, rhythm, content, rhythm_r, content_r, pitch_p_r_quan, d_r_mel_out)
 
+                optimizer_g.zero_grad()
                 optimizer_d.zero_grad()
-                total_loss_d.backward()
-                optimizer_d.step()
+                total_loss_g.backward(retain_graph=True)
+                optimizer_g.step()
 
-                # -----------------------------------------------------
+                if batch_id % 5000 == 0:
+                    # ---------------- discriminator train ----------------
+                    d_r_mel_in = discriminator.forward(mel_in)
+                    d_r_mel_out = discriminator.forward(mel_out.detach())
 
-            if batch_id % 5 == 0:
-                # tensorboard_draw(writer, mel_in, mel_out, recon_voice_loss, recon_pitch_loss, total_loss_g, total_loss_d, global_step)
-                tensorboard_draw(writer, mel_in, mel_out, recon_voice_loss, recon_pitch_loss, total_loss_g, total_loss_g, global_step)
+                    # ---------------- discriminator loss compute ----------------
 
-        scheduler_g.step()
-        # scheduler_d.step()
-        writer.close()
+                    total_loss_d = compute_D_loss(d_r_mel_in, d_r_mel_out)
+                    total_loss_d = total_loss_d * 100
 
-        print("total_loss_g : %.5lf\n" % total_loss_g)
-        # print("total_loss_d : %.5lf" % total_loss_d)
+                    optimizer_d.zero_grad()
+                    total_loss_d.backward()
+                    optimizer_d.step()
 
-        if curr_epoch % 500 == 0 :
-            os.makedirs(("/storage/mskim/checkpoint/{}".format(config.opt.checkpoint_name)), exist_ok=True)
-            torch.save({'generator': generator.state_dict(), 'discriminator': discriminator.state_dict(), 'optimizer_g': optimizer_g.state_dict(), 'optimizer_d': optimizer_d.state_dict()}, "/storage/mskim/checkpoint/{}/{}.pth".format(config.opt.checkpoint_name, curr_epoch + 1))
+                    # -----------------------------------------------------
 
+                if batch_id % 5 == 0:
+                    # tensorboard_draw(writer, mel_in, mel_out, recon_voice_loss, recon_pitch_loss, total_loss_g, total_loss_d, global_step)
+                    tensorboard_draw(writer, mel_in, mel_out, recon_voice_loss, recon_pitch_loss, total_loss_g, total_loss_g, global_step)
+
+            scheduler_g.step()
+            # scheduler_d.step()
+            writer.close()
+
+            print("total_loss_g : %.5lf\n" % total_loss_g)
+            # print("total_loss_d : %.5lf" % total_loss_d)
+
+            if curr_epoch % 500 == 0 :
+                torch.save({'generator': generator.state_dict(), 'discriminator': discriminator.state_dict(), 'optimizer_g': optimizer_g.state_dict(), 'optimizer_d': optimizer_d.state_dict()}, "/storage/mskim/checkpoint/{}.pth".format(config.opt.checkpoint_name))
+
+    except Exception as e:
+        print(e)
