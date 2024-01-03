@@ -31,9 +31,9 @@ def setup(opt):
     # -------------------------------------------- setup dataload --------------------------------------------
     # original dataset
     # if not opt.debugging:
-    #     from ssun.Voice_trans.data.dataload_dacon import get_loader
+    #     from ssun.Voice_trans.data.dataload_original import get_loader
     # else:
-    #     from Voice_trans.data.dataload_dacon import get_loader
+    #     from Voice_trans.data.dataload_original import get_loader
     # dataload = get_loader(opt)
 
     # remove noise dataset
@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
                     # -----------------------------------------------------
 
-                if batch_id % 5 == 0:
+                if batch_id % 1 == 0:
                     # tensorboard_draw(writer, mel_in, mel_out, recon_voice_loss, recon_pitch_loss, total_loss_g, total_loss_d, global_step)
                     tensorboard_draw(writer, mel_in, mel_out, recon_voice_loss, recon_pitch_loss, total_loss_g, total_loss_g, global_step)
 

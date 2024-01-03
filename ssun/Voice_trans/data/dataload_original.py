@@ -38,11 +38,12 @@ class accent():
         return sp_id
 
     def data_load_npy(self):
-        mel_data = []
-        pitch_data = []
+        mel_data=[]
+        pitch_data=[]
 
         dataset_mel = sorted(glob.glob(self.dataset_dir + 'mel/*.npy'))
         dataset_pitch = sorted(glob.glob(self.dataset_dir + 'pitch/*.npy'))
+
 
         mel_data.append(dataset_mel[0])
         mel_data.append(dataset_mel[-1])
@@ -55,10 +56,11 @@ class accent():
     # def data_load_npy(self):
     #
     #     dataset_mel = sorted(glob.glob(self.dataset_dir + 'mel/*.npy'))
+    #     dataset_mfcc = sorted(glob.glob(self.dataset_dir + 'mfcc/*.npy'))
     #     dataset_pitch = sorted(glob.glob(self.dataset_dir + 'pitch/*.npy'))
     #
-    #     # return dataset_mel, dataset_pitch
-    #     return dataset_mel[0:20], dataset_pitch[0:20]
+    #     # return dataset_mel, dataset_mfcc, dataset_pitch
+    #     return dataset_mel[0:20], dataset_mfcc[0:20], dataset_pitch[0:20]
 
 class MyCollator(object):
     def __init__(self):
@@ -85,14 +87,14 @@ class MyCollator(object):
 
         batch = new_batch
 
-        a, b, c, d = zip(*batch)
+        a, b, c, d= zip(*batch)
 
         melsp = torch.from_numpy(np.stack(a, axis=0))
         pitch = torch.from_numpy(np.stack(b, axis=0))
         len_org = torch.from_numpy(np.stack(c, axis=0))
         sp_id = torch.from_numpy(np.stack(d, axis=0))
 
-        return {'melsp': melsp, 'pitch': pitch, 'len_org': len_org, 'sp_id': sp_id}
+        return {'melsp' : melsp, 'pitch' : pitch, 'len_org' : len_org, 'sp_id' : sp_id}
 
 class MultiSampler(Sampler):
     def __init__(self, num_samples, n_repeats, shuffle=False):
@@ -115,7 +117,7 @@ class MultiSampler(Sampler):
         return len(self.sample_idx_array)
 
 def get_loader(opt):
-    dataset_path = '/storage/mskim/English_voice/dataset_remove_noise/'
+    dataset_path = '/storage/mskim/English_voice/make_dataset/data_nan_expect/'
     dataset_train = accent(dataset_path)
 
     sample = MultiSampler(len(dataset_train), opt.samplier, shuffle=False)

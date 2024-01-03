@@ -2,7 +2,6 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
-
 def tensorboard_draw(writer, mel_in, mel_out, recon_voice_loss, recon_pitch_loss, total_loss_g, total_loss_d, global_step):
 
     writer.add_scalar("loss/recon_voice_loss", recon_voice_loss, global_step)
@@ -24,6 +23,7 @@ def tensorboard_draw(writer, mel_in, mel_out, recon_voice_loss, recon_pitch_loss
 
     writer.add_figure('mel-spectrogram/voice_target', spectrogram_target, global_step)
     writer.add_figure('mel-spectrogram/voice_prediction', spectrogram_prediction, global_step)
+
 def plot_spectrogram(spectrogram):
     fig, ax = plt.subplots(figsize=(10, 2))
     im = ax.imshow(spectrogram, aspect="auto", origin="lower", interpolation='none')
