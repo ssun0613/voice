@@ -6,7 +6,7 @@ from torch.optim import lr_scheduler
 from setproctitle import *
 
 from config import Config
-from model.generator import generator as G
+from model.generator import generator_without_content as G
 from model.discriminator_star import Discriminator as D
 from model.encoder import InterpLnr
 
