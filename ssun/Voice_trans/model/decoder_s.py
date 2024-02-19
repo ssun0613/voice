@@ -10,6 +10,7 @@ class Decoder_s(nn.Module):
 
 
     def forward(self, x):
+        x = torch.tensor(x, dtype=torch.float32).clone().detach()
         output = self.lstm_d(x)[0]
         decoder_output = self.linear(output)
 

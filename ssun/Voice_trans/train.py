@@ -6,9 +6,8 @@ from torch.optim import lr_scheduler
 from setproctitle import *
 
 from config import Config
-from model.generator import generator_without_content as G
+from model.generator import generator_original as G
 from model.discriminator_star import Discriminator as D
-from model.encoder import InterpLnr
 
 from torch.utils.tensorboard import SummaryWriter
 from functions.load_network import load_networks, init_weights
@@ -20,7 +19,7 @@ import matplotlib
 matplotlib.use("Agg")
 
 def setup(opt):
-    #-------------------------------------------- setup device --------------------------------------------
+    # -------------------------------------------- setup device --------------------------------------------
     if len(opt.gpu_id) != 0:
         if not opt.debugging:
             device = torch.device("cuda:{}".format(opt.gpu_id) if torch.cuda.is_available() else "cpu")
@@ -29,13 +28,6 @@ def setup(opt):
     else:
         device = torch.device("cpu")
     # -------------------------------------------- setup dataload --------------------------------------------
-    # original dataset
-    # if not opt.debugging:
-    #     from ssun.Voice_trans.data.dataload_original import get_loader
-    # else:
-    #     from Voice_trans.data.dataload_original import get_loader
-    # dataload = get_loader(opt)
-
     # remove noise dataset
     if not opt.debugging:
         from ssun.Voice_trans.data.dataload_remove_noise import get_loader
@@ -82,7 +74,7 @@ if __name__ == "__main__":
 
     setproctitle(config.opt.network_name)
     torch.cuda.set_device(int(config.opt.gpu_id))
-    writer = SummaryWriter('./runs/{}'.format(config.opt.tensor_name))
+    writer = SummaryWriter('/storage/mskim/tensorboard/{}'.format(config.opt.tensor_name))
     device, generator, discriminator, dataload, optimizer_g, optimizer_d, scheduler_g, scheduler_d = setup(config.opt)
     print(device)
 
@@ -132,9 +124,9 @@ if __name__ == "__main__":
 
                     # -----------------------------------------------------
 
-                if batch_id % 1 == 0:
-                    # tensorboard_draw(writer, mel_in, mel_out, recon_voice_loss, recon_pitch_loss, total_loss_g, total_loss_d, global_step)
-                    tensorboard_draw(writer, mel_in, mel_out, recon_voice_loss, recon_pitch_loss, total_loss_g, total_loss_g, global_step)
+            if curr_epoch % 500 == 0 :
+                # tensorboard_draw(writer, mel_in, mel_out, recon_voice_loss, recon_pitch_loss, total_loss_g, total_loss_d, global_step)
+                tensorboard_draw(writer, mel_in, mel_out, recon_voice_loss, recon_pitch_loss, total_loss_g, total_loss_g, global_step)
 
             scheduler_g.step()
             # scheduler_d.step()

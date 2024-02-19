@@ -4,10 +4,11 @@ import torch.nn.functional as F
 from hparams import hparams
 
 class speechsplit(nn.Module):
-    def __init__(self):
+    def __init__(self, hparams):
         super().__init__()
         self.Er = Er()
-        self.Ec_Ef = Ec_Ef()
+        self.Ec = Ec()
+        self.Ep = Ep()
         self.D = D()
 
         self.freq_c = hparams.freq # 8
@@ -17,7 +18,11 @@ class speechsplit(nn.Module):
     def forward(self, x_f0, x_org, c_trg):
         # input : x_f0_intrp_org.shape : torch.Size([2, 192, 337]), x_real_org.shape : torch.Size([2, 192, 80]), emb_org.shape : torch.Size([2, 82])
         x_1 = x_f0.transpose(2, 1)
-        codes_c, codes_f = self.Ec_Ef(x_1)
+
+        c = x_1[:, :80, :]
+
+        codes_c = self.Ec(c)
+        _, codes_f = self.Ep(x_1)
         codes_c_r = codes_c.repeat_interleave(self.freq_c, dim=1)
         codes_f_r = codes_f.repeat_interleave(self.freq_f, dim=1)
 
@@ -35,17 +40,6 @@ class speechsplit(nn.Module):
         codes_2 = self.Er(x_2, mask=None)
         return codes_2
 
-class Conv_layer(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=None, dilation=1, bias=True):
-        super(Conv_layer, self).__init__()
-        if padding is None:
-            assert(kernel_size % 2 == 1)
-            padding = int(dilation * (kernel_size - 1) / 2)
-
-        self.Conv_layer = nn.Conv1d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
-
-    def forward(self, params):
-        return self.Conv_layer(params)
 
 class Er(nn.Module):
     def __init__(self):
@@ -57,8 +51,17 @@ class Er(nn.Module):
         self.dim_freq = hparams.dim_freq # 80
         self.chs_grp = hparams.chs_grp # 16
 
-        self.conv_r = nn.Sequential(Conv_layer(self.dim_freq, self.dim_enc_r, kernel_size=5, stride=1, padding=2, dilation=1),
-                                    nn.GroupNorm(self.dim_enc_r // self.chs_grp, self.dim_enc_r))
+        convolutions = []
+        for i in range(1):
+            conv_layer = nn.Sequential(
+                Conv_layer(self.dim_freq if i == 0 else self.dim_enc_r,
+                         self.dim_enc_r,
+                         kernel_size=5, stride=1,
+                         padding=2,
+                         dilation=1, w_init_gain='relu'),
+                nn.GroupNorm(self.dim_enc_r // self.chs_grp, self.dim_enc_r))
+            convolutions.append(conv_layer)
+        self.conv_r = nn.ModuleList(convolutions)
         self.lstm_r = nn.LSTM(self.dim_enc_r, self.dim_neck_r, 1, batch_first=True, bidirectional=True)
 
     def forward(self, r, mask):
@@ -78,72 +81,134 @@ class Er(nn.Module):
 
         return codes_r
 
-class Ec_Ef(nn.Module):
+class Ec(nn.Module):
     def __init__(self):
         super().__init__()
-        self.dim_freq = hparams.dim_freq # 80
-        self.dim_f0 = hparams.dim_f0 # 257
-        self.chs_grp = hparams.chs_grp # 16
-        self.register_buffer('len_org', torch.tensor(hparams.max_len_pad)) # hparams.max_len_pad 192
-
-        # hparams that Ec use
-        self.freq_c = hparams.freq # 8
-        self.dim_neck_c = hparams.dim_neck # 8
-        self.dim_enc_c = hparams.dim_enc # 512
-
-        # hparams that Ef use
-        self.freq_f = hparams.freq_3 # 8
-        self.dim_neck_f = hparams.dim_neck_3 # 32
-        self.dim_enc_f = hparams.dim_enc_3 # 256
+        self.dim_neck = hparams.dim_neck
+        self.freq = hparams.freq
+        self.freq_3 = hparams.freq_3
+        self.dim_enc = hparams.dim_enc
+        self.dim_enc_3 = hparams.dim_enc_3
+        self.dim_freq = hparams.dim_freq
+        self.chs_grp = hparams.chs_grp
+        self.register_buffer('len_org', torch.tensor(hparams.max_len_pad))
+        self.dim_neck_3 = hparams.dim_neck_3
+        self.dim_f0 = hparams.dim_f0
 
         # Ec architecture
-        self.conv_c = nn.Sequential(Conv_layer(self.dim_freq, self.dim_enc_c, kernel_size=5, stride=1, padding=2, dilation=1),
-                                    Conv_layer(self.dim_enc_c, self.dim_enc_c, kernel_size=5, stride=1, padding=2, dilation=1),
-                                    Conv_layer(self.dim_enc_c, self.dim_enc_c, kernel_size=5, stride=1, padding=2, dilation=1),
-                                    nn.GroupNorm(self.dim_enc_c//self.chs_grp, self.dim_enc_c))
-        self.lstm_c = nn.LSTM(self.dim_enc_c, self.dim_neck_c, 1, batch_first=True, bidirectional=True)
+        convolutions = []
+        for i in range(3):
+            conv_layer = nn.Sequential(
+                Conv_layer(self.dim_freq if i == 0 else self.dim_enc,
+                         self.dim_enc,
+                         kernel_size=5, stride=1,
+                         padding=2,
+                         dilation=1, w_init_gain='relu'),
+                nn.GroupNorm(self.dim_enc // self.chs_grp, self.dim_enc))
+            convolutions.append(conv_layer)
+        self.convolutions_c = nn.ModuleList(convolutions)
 
-        # Ef architecture
-        self.conv_f = nn.Sequential(Conv_layer(self.dim_f0, self.dim_enc_f, kernel_size=5, stride=1, padding=2, dilation=1),
-                                    Conv_layer(self.dim_enc_f, self.dim_enc_f, kernel_size=5, stride=1, padding=2, dilation=1),
-                                    Conv_layer(self.dim_enc_f, self.dim_enc_f, kernel_size=5, stride=1, padding=2, dilation=1),
-                                    nn.GroupNorm(self.dim_enc_f//self.chs_grp, self.dim_enc_f))
-        self.lstm_f = nn.LSTM(self.dim_enc_f, self.dim_neck_f, 1, batch_first=True, bidirectional=True)
+        self.lstm_c = nn.LSTM(self.dim_enc, self.dim_neck, 2, batch_first=True, bidirectional=True)
+        self.interp = InterpLnr(hparams)
 
-        self.interp = InterpLnr()
-
-    def forward(self, c_f):
-        c = c_f[:, :self.dim_freq, :]
-        f = c_f[:, self.dim_freq:, :]
-
-        for conv_c, conv_f in zip(self.conv_c, self.conv_f):
+    def forward(self, c):
+        for conv_c in self.convolutions_c:
             c = F.relu(conv_c(c))
-            f = F.relu(conv_f(f))
+            c = c.transpose(1, 2)
+            c = self.interp(c, self.len_org.expand(c.size(0)))
+            c = c.transpose(1, 2)
 
-            c_f = torch.cat((c, f), dim=1).transpose(1, 2)
-            c_f = self.interp(c_f, self.len_org.expand(c.size(0)))
-            c_f = c_f.transpose(1, 2)
-            c = c_f[:, :self.dim_enc_c, :]
-            f = c_f[:, self.dim_enc_c:, :]
-
-        c_f = c_f.transpose(1, 2)
-        c = c_f[:, :, :self.dim_enc_c]
-        f = c_f[:, :, self.dim_enc_c:]
-
+        c = c.transpose(1, 2)
         c = self.lstm_c(c)[0]
-        f = self.lstm_f(f)[0]
 
-        c_forward = c[:, :, :self.dim_neck_c]
-        c_backward = c[:, :, self.dim_neck_c:]
+        c_forward = c[:, :, :self.dim_neck]
+        c_backward = c[:, :, self.dim_neck:]
 
-        f_forward = f[:, :, :self.dim_neck_f]
-        f_backward = f[:, :, self.dim_neck_f:]
+        codes_c = torch.cat((c_forward[:, self.freq - 1::self.freq, :], c_backward[:, ::self.freq, :]), dim=-1)  # codes_c.shape : torch.Size([2, 24, 16])
 
-        codes_c = torch.cat((c_forward[:, self.freq_c-1::self.freq_c, :], c_backward[:, ::self.freq_c, :]), dim=-1)
-        codes_f = torch.cat((f_forward[:, self.freq_f-1::self.freq_f, :], f_backward[:, ::self.freq_f, :]), dim=-1)
+        return codes_c
 
-        return codes_c, codes_f
+class Ep(nn.Module):
+    def __init__(self):
+        super().__init__()
 
+        self.dim_neck = hparams.dim_neck
+        self.freq = hparams.freq
+        self.freq_3 = hparams.freq_3
+        self.dim_enc = hparams.dim_enc
+        self.dim_enc_3 = hparams.dim_enc_3
+        self.dim_freq = hparams.dim_freq
+        self.chs_grp = hparams.chs_grp
+        self.register_buffer('len_org', torch.tensor(hparams.max_len_pad))
+        self.dim_neck_3 = hparams.dim_neck_3
+        self.dim_f0 = hparams.dim_f0
+
+        # convolutions for code 1
+        convolutions = []
+        for i in range(3):
+            conv_layer = nn.Sequential(
+                Conv_layer(self.dim_freq if i == 0 else self.dim_enc,
+                         self.dim_enc,
+                         kernel_size=5, stride=1,
+                         padding=2,
+                         dilation=1, w_init_gain='relu'),
+                nn.GroupNorm(self.dim_enc // self.chs_grp, self.dim_enc))
+            convolutions.append(conv_layer)
+        self.convolutions_1 = nn.ModuleList(convolutions)
+
+        self.lstm_1 = nn.LSTM(self.dim_enc, self.dim_neck, 2, batch_first=True, bidirectional=True)
+
+        # convolutions for f0
+        convolutions = []
+        for i in range(3):
+            conv_layer = nn.Sequential(
+                Conv_layer(self.dim_f0 if i == 0 else self.dim_enc_3,
+                         self.dim_enc_3,
+                         kernel_size=5, stride=1,
+                         padding=2,
+                         dilation=1, w_init_gain='relu'),
+                nn.GroupNorm(self.dim_enc_3 // self.chs_grp, self.dim_enc_3))
+            convolutions.append(conv_layer)
+        self.convolutions_2 = nn.ModuleList(convolutions)
+
+        self.lstm_2 = nn.LSTM(self.dim_enc_3, self.dim_neck_3, 1, batch_first=True, bidirectional=True)
+
+        self.interp = InterpLnr(hparams)
+
+    def forward(self, x_f0):
+
+        x = x_f0[:, :self.dim_freq, :]
+        f0 = x_f0[:, self.dim_freq:, :]
+
+        for conv_1, conv_2 in zip(self.convolutions_1, self.convolutions_2):
+            x = F.relu(conv_1(x))
+            f0 = F.relu(conv_2(f0))
+            x_f0 = torch.cat((x, f0), dim=1).transpose(1, 2)
+            x_f0 = self.interp(x_f0, self.len_org.expand(x.size(0)))
+            x_f0 = x_f0.transpose(1, 2)
+            x = x_f0[:, :self.dim_enc, :]
+            f0 = x_f0[:, self.dim_enc:, :]
+
+        x_f0 = x_f0.transpose(1, 2)
+        x = x_f0[:, :, :self.dim_enc]
+        f0 = x_f0[:, :, self.dim_enc:]
+
+        # code 1
+        x = self.lstm_1(x)[0]
+        f0 = self.lstm_2(f0)[0]
+
+        x_forward = x[:, :, :self.dim_neck]
+        x_backward = x[:, :, self.dim_neck:]
+
+        f0_forward = f0[:, :, :self.dim_neck_3]
+        f0_backward = f0[:, :, self.dim_neck_3:]
+
+        codes_x = torch.cat((x_forward[:, self.freq - 1::self.freq, :], x_backward[:, ::self.freq, :]), dim=-1)
+
+        codes_f0 = torch.cat((f0_forward[:, self.freq_3 - 1::self.freq_3, :],
+                              f0_backward[:, ::self.freq_3, :]), dim=-1)
+
+        return codes_x, codes_f0
 class D(nn.Module):
     def __init__(self):
         super().__init__()
@@ -153,7 +218,7 @@ class D(nn.Module):
         self.dim_freq = hparams.dim_freq # 8
         self.dim_neck_3 = hparams.dim_neck_3 # 32
 
-        self.lstm_d = nn.LSTM(88, 512, 3, batch_first=True, bidirectional=True)
+        self.lstm_d = nn.LSTM(104, 512, 3, batch_first=True, bidirectional=True)
         self.linear = nn.Linear(1024, self.dim_freq, bias=True)
 
     def forward(self, x):
@@ -162,8 +227,26 @@ class D(nn.Module):
 
         return decoder_output
 
+class Conv_layer(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=None, dilation=1, bias=True, w_init_gain='linear'):
+        super(Conv_layer, self).__init__()
+        if padding is None:
+            assert (kernel_size % 2 == 1)
+            padding = int(dilation * (kernel_size - 1) / 2)
+
+        self.conv = torch.nn.Conv1d(in_channels, out_channels,
+                                    kernel_size=kernel_size, stride=stride,
+                                    padding=padding, dilation=dilation,
+                                    bias=bias)
+
+        torch.nn.init.xavier_uniform_(self.conv.weight, gain=torch.nn.init.calculate_gain(w_init_gain))
+
+    def forward(self, signal):
+        conv_signal = self.conv(signal)
+        return conv_signal
+
 class InterpLnr(nn.Module):
-    def __init__(self):
+    def __init__(self, hparams):
         super().__init__()
         self.max_len_seq = hparams.max_len_seq # 128
         self.max_len_pad = hparams.max_len_pad # 192

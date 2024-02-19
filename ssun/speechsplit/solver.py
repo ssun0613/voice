@@ -1,7 +1,7 @@
-from models_orig import Generator_3 as Generator
-from models_orig import InterpLnr
-# from model_ssun import speechsplit as Generator
-# from model_ssun import InterpLnr
+# from models_orig import Generator_3 as Generator
+# from models_orig import InterpLnr
+from model_ssun import speechsplit as Generator
+from model_ssun import InterpLnr
 import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F
@@ -59,8 +59,8 @@ class Solver():
         print('Loading the trained models from step {}...'.format(resume_iters))
         G_path = os.path.join(self.model_save_dir, '{}-G.ckpt'.format(resume_iters))
         g_checkpoint = torch.load(G_path, map_location=lambda storage, loc: storage)
-        self.G.load_state_dict(g_checkpoint['model'])
-        self.g_optimizer.load_state_dict(g_checkpoint['optimizer'])
+        self.G.load_state_dict(g_checkpoint['Generator'])
+        self.g_optimizer.load_state_dict(g_checkpoint['g_optimizer'])
         self.g_lr = self.g_optimizer.param_groups[0]['lr']
 
     def build_tensorboard(self):
@@ -71,15 +71,16 @@ class Solver():
         self.g_optimizer.zero_grad()
 
     def train(self):
-
         data_loader = self.vcc_loader
         data_iter = iter(data_loader)
+
 
         start_iters = 0
         if self.resume_iters:
             print('Resuming...')
             start_iters = self.resume_iters
             self.num_iters += self.resume_iters
+            self.restore_model(self.resume_iters)
 
         g_lr = self.g_lr
         print('Current learning rate, g_lr: {}.'.format(g_lr))
@@ -93,6 +94,8 @@ class Solver():
             except:
                 data_iter = iter(data_loader)
                 x_real_org, emb_org, f0_org, len_org = next(data_iter)
+
+            # melsp, spk_emb, pitch, len_org
 
             x_real_org = x_real_org.to(self.device)  # x_real_org.shape : torch.Size([2, 192, 80])
             emb_org = emb_org.to(self.device)  # emb_org.shape : torch.Size([2, 82])
@@ -135,8 +138,10 @@ class Solver():
                     log += ", {}: {:.8f}".format(tag, loss[tag])
                 print(log)
 
-            if i % 200 == 0:
+            if i % 1000 == 0:
                 for tag, value in loss.items():
                     self.writer.add_scalar(tag, value, i + 1)
                 self.writer.add_figure('generated/mel_spectorgram_num_iters', plot_spectrogram(x_identic[0].squeeze(0).cpu().detach().numpy()), i)
                 self.writer.add_figure('gt/mel_spectorgram_num_iters', plot_spectrogram(x_real_org[0].squeeze(0).cpu().detach().numpy()), i)
+
+        torch.save({'Generator': self.G.state_dict(),'g_optimizer': self.g_optimizer.state_dict()},"/storage/mskim/checkpoint/speechsplit_32.pth")

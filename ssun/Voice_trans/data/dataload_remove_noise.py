@@ -52,14 +52,6 @@ class accent():
 
         return mel_data, pitch_data
 
-    # def data_load_npy(self):
-    #
-    #     dataset_mel = sorted(glob.glob(self.dataset_dir + 'mel/*.npy'))
-    #     dataset_pitch = sorted(glob.glob(self.dataset_dir + 'pitch/*.npy'))
-    #
-    #     # return dataset_mel, dataset_pitch
-    #     return dataset_mel[0:20], dataset_pitch[0:20]
-
 class MyCollator(object):
     def __init__(self):
         self.min_len_seq = 64

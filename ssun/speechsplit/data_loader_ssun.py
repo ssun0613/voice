@@ -14,7 +14,6 @@ LABEL = {'africa': 0, 'australia': 1, 'canada' : 2, 'england' : 3, 'hongkong' : 
 class Utterances(data.Dataset):
     def __init__(self, root_dir, feat_dir, mode):
         self.dataset_dir = '/storage/mskim/English_voice/dataset_remove_noise/'
-        # self.dataset_dir = '/storage/mskim/English_voice/make_dataset/data_nan_expect/'
         self.step = 20
         self.split = 0
 

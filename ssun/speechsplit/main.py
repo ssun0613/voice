@@ -40,7 +40,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # Training configuration.
-    parser.add_argument('--num_iters', type=int, default=100000, help='number of total iterations')
+    parser.add_argument('--num_iters', type=int, default=10000, help='number of total iterations')
     parser.add_argument('--g_lr', type=float, default=0.0001, help='learning rate for G')
     parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for Adam optimizer')
     parser.add_argument('--beta2', type=float, default=0.999, help='beta2 for Adam optimizer')
@@ -51,9 +51,9 @@ if __name__ == '__main__':
     parser.add_argument('--device_id', type=int, default=0)
 
     # Directories.
-    parser.add_argument('--log_dir', type=str, default='run/logs_noise_remove_voice')
-    parser.add_argument('--model_save_dir', type=str, default='run/models_noise_remove_voice')
-    parser.add_argument('--sample_dir', type=str, default='run/samples_noise_remove_voice')
+    parser.add_argument('--log_dir', type=str, default='run/speechsplit')
+    parser.add_argument('--model_save_dir', type=str, default='run/speechsplit')
+    parser.add_argument('--sample_dir', type=str, default='run/speechsplit')
 
     # Step size.
     parser.add_argument('--log_step', type=int, default=10)
