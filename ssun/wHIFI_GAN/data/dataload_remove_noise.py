@@ -10,8 +10,8 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 
-LABEL = {'africa': 0, 'australia': 1, 'canada' : 2, 'england' : 3, 'hongkong' : 4, 'us' : 5}
-
+# LABEL = {'africa': 0, 'australia': 1, 'canada' : 2, 'england' : 3, 'hongkong' : 4, 'us' : 5}
+LABEL = {'africa': 1, 'australia': 2, 'canada' : 3, 'england' : 4, 'hongkong' : 5, 'us' : 0}
 class accent():
     def __init__(self, dataset_path, is_training=True):
         self.dataset_dir = dataset_path
@@ -44,22 +44,11 @@ class accent():
         dataset_mel = sorted(glob.glob(self.dataset_dir + 'mel/*.npy'))
         dataset_pitch = sorted(glob.glob(self.dataset_dir + 'pitch/*.npy'))
 
-        mel_data.append(dataset_mel[0])
-        mel_data.append(dataset_mel[-1])
-        # mel_data.append(dataset_mel[245])
-        # mel_data.append(dataset_mel[7490])
-        # mel_data.append(dataset_mel[12345])
-        # mel_data.append(dataset_mel[14567])
-        # mel_data.append(dataset_mel[18954])
+        mel_data.append(dataset_mel[2])
+        mel_data.append(dataset_mel[-2])
 
-
-        pitch_data.append(dataset_pitch[0])
-        pitch_data.append(dataset_pitch[-1])
-        # pitch_data.append(dataset_pitch[245])
-        # pitch_data.append(dataset_pitch[7490])
-        # pitch_data.append(dataset_pitch[12345])
-        # pitch_data.append(dataset_pitch[14567])
-        # pitch_data.append(dataset_pitch[18954])
+        pitch_data.append(dataset_pitch[2])
+        pitch_data.append(dataset_pitch[-2])
 
         return mel_data, pitch_data
 

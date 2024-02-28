@@ -1,22 +1,22 @@
-import os, sys, json, matplotlib, warnings
+import os, sys, json, matplotlib, warnings, librosa
 sys.path.append("..")
 matplotlib.use("Agg")
 warnings.simplefilter('ignore', category=FutureWarning)
 
+import numpy as np
+import matplotlib.pyplot as plt
 import torch
+import torch.nn as nn
 from torch.optim import lr_scheduler
 from setproctitle import *
 from scipy.io.wavfile import write
 
 from config import Config
-from model.generator import generator_original as G
-from model.speechsplit_ssun import speechsplit
+from model.speechsplit_ssun import speechsplit, InterpLnr
 from model.hifigan import Generator
 
 from torch.utils.tensorboard import SummaryWriter
 from functions.load_network import load_networks, init_weights
-from functions.loss_function import compute_G_loss, compute_D_loss
-from functions.draw_function import tensorboard_draw
 from functions.etc_fcn import quantize_f0_torch
 
 from hparams import hparams
@@ -41,8 +41,7 @@ def setup(opt):
     dataload = get_loader(opt)
 
     # -------------------------------------------- setup network --------------------------------------------
-    generator = G(opt).to(device)
-    speechsplit = speechsplit(hparams).to(device)
+    generator = speechsplit(hparams).to(device)
     if opt.continue_train:
         generator = load_networks(generator, opt.checkpoint_name, device, net_name='generator', weight_path= "/storage/mskim/checkpoint/")
 
@@ -81,6 +80,37 @@ def setup_hifi(device):
 
     return hifi_generator, h
 
+def tensorboard_draw(writer, mel_in, mel_out, g_loss, global_step, y_g_hat, sampling_rate):
+
+    writer.add_scalar("loss/g_loss", g_loss, global_step)
+
+    spectrogram_target = []
+    spectrogram_prediction = []
+
+    for i in range(mel_in.shape[0]):
+        target_spectogram = (mel_in[i].squeeze(0).permute(1, 0).cpu().detach().numpy())
+        target_spectogram = plot_spectrogram(target_spectogram)
+        spectrogram_target.append(target_spectogram)
+
+        prediction_spectogram = (mel_out[i].squeeze(0).permute(1, 0).cpu().detach().numpy())
+        prediction_spectogram = plot_spectrogram(prediction_spectogram)
+        spectrogram_prediction.append(prediction_spectogram)
+
+    writer.add_figure('mel-spectrogram/voice_target', spectrogram_target, global_step)
+    writer.add_figure('mel-spectrogram/voice_prediction', spectrogram_prediction, global_step)
+
+    writer.add_audio('audio/voice_prediction', y_g_hat[0], global_step, sampling_rate)
+
+def plot_spectrogram(spectrogram):
+    fig, ax = plt.subplots(figsize=(10, 2))
+    im = ax.imshow(spectrogram, aspect="auto", origin="lower", interpolation='none')
+    plt.colorbar(im, ax=ax)
+
+    fig.canvas.draw()
+    plt.close()
+
+    return fig
+
 
 if __name__ == "__main__":
 
@@ -95,7 +125,6 @@ if __name__ == "__main__":
 
     print(device)
 
-
     try:
         global_step = 0
         for curr_epoch in range(config.opt.epochs):
@@ -108,37 +137,50 @@ if __name__ == "__main__":
                 len_org = data['len_org'].to(device)
                 sp_id = data['sp_id'].to(device)
 
-                pitch_t_quan = quantize_f0_torch(pitch_t)[0]
+                x_f0 = torch.cat((mel_in, pitch_t), dim=-1)
+                x_f0_intrp = InterpLnr(hparams)(x_f0, len_org)
+                f0_org_intrp = quantize_f0_torch(x_f0_intrp[:, :, -1])[0]
+                x_f0_intrp_org = torch.cat((x_f0_intrp[:, :, :-1], f0_org_intrp), dim=-1)
 
                 # ---------------- mel_spectogram ----------------
 
-                mel_out, pitch_p_repeat_quan, rhythm, content, rhythm_r, content_r, pitch_p_r_quan = generator.forward(mel_in, len_org, sp_id)
+                mel_out = generator.forward(x_f0_intrp_org, mel_in, sp_id)
 
                 # -------------------- wav --------------------
                 torch.cuda.empty_cache()
                 y_g_hat = hifi_generator(mel_out.transpose(2,1).transpose(2,0).to(device))
-                write("/storage/mskim/audio.wav", 22050, y_g_hat[0].cpu().detach().numpy())
+
+                # import soundfile as sf
+                # sf_path = '/storage/mskim/prediction_audio.wav'
+                # sf.write(sf_path, y_g_hat.cpu().detach().numpy(), h.sampling_rate)
+
+                mel_nrw = librosa.amplitude_to_db(np.abs(librosa.stft(mel_in[0].cpu().detach().numpy())), ref=np.max)
+                mel_orig = librosa.amplitude_to_db(np.abs(librosa.stft(y_g_hat[0].cpu().detach().numpy())), ref=np.max)
+                plt.subplot(2, 1, 1)
+                plt.imshow(mel_nrw[::-1, :])
+                plt.subplot(2, 1, 2)
+                plt.imshow(mel_orig[::-1, :])
 
                 # ---------------- generator loss compute ----------------
 
-                recon_voice_loss, recon_pitch_loss, total_loss_g = compute_G_loss(config.opt, mel_in, pitch_t_quan, mel_out, pitch_p_repeat_quan, rhythm, content, rhythm_r, content_r, pitch_p_r_quan)
+                g_loss = nn.MSELoss(reduction='mean')(mel_in, mel_out)
 
                 optimizer_g.zero_grad()
-                total_loss_g.backward(retain_graph=True)
+                g_loss.backward(retain_graph=True)
                 optimizer_g.step()
 
 
-            if curr_epoch % 100 == 0 :
-                tensorboard_draw(writer, mel_in, mel_out, recon_voice_loss, recon_pitch_loss, total_loss_g, total_loss_g, global_step, y_g_hat, h.sampling_rate)
+            if curr_epoch % 1000 == 0 :
+                tensorboard_draw(writer, mel_in, mel_out, g_loss, global_step, y_g_hat, h.sampling_rate)
 
             scheduler_g.step()
             writer.close()
 
+            print("total_loss_g : %.5lf\n" % g_loss)
 
-            print("total_loss_g : %.5lf\n" % total_loss_g)
-
-            if curr_epoch % 500 == 0 :
+            if curr_epoch % 1000 == 0 and not config.opt.continue_train:
                 torch.save({'generator': generator.state_dict(), 'optimizer_g': optimizer_g.state_dict()}, "/storage/mskim/checkpoint/{}.pth".format(config.opt.checkpoint_name))
+
 
     except Exception as e:
         print(e)

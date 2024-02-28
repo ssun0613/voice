@@ -219,7 +219,7 @@ class D(nn.Module):
         self.dim_freq = hparams.dim_freq # 8
         self.dim_neck_3 = hparams.dim_neck_3 # 32
 
-        self.lstm_d = nn.LSTM(88, 512, 3, batch_first=True, bidirectional=True)
+        self.lstm_d = nn.LSTM(104, 512, 3, batch_first=True, bidirectional=True) #####
         self.linear = nn.Linear(1024, self.dim_freq, bias=True)
 
     def forward(self, x):

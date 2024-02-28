@@ -29,7 +29,7 @@ class FastPitchFormant(nn.Module):
         speaker_embedding = None
         if self.speaker_emb is not None:
             # speaker_embedding = self.speaker_emb(speakers).unsqueeze(1).expand(-1, max_src_len, -1)
-            speaker_embedding = self.speaker_emb(speakers).unsqueeze(1).expand(-1, 16, -1)
+            speaker_embedding = self.speaker_emb(speakers).unsqueeze(1).expand(-1, 32, -1)
             pre_c = pre_c + speaker_embedding
 
         (h, p, p_predictions, log_d_predictions, d_rounded, mel_lens, mel_masks) = self.variance_adaptor(pre_c, speaker_embedding, src_masks, mel_masks, max_mel_len, p_targets, d_targets, p_control, d_control)

@@ -47,22 +47,17 @@ def expand_abbreviations(text):
         text = re.sub(regex, replacement, text)
     return text
 
-
 def expand_numbers(text):
     return normalize_numbers(text)
-
 
 def lowercase(text):
     return text.lower()
 
-
 def collapse_whitespace(text):
     return re.sub(_whitespace_re, ' ', text)
 
-
 def convert_to_ascii(text):
     return unidecode(text)
-
 
 def basic_cleaners(text):
     '''Basic pipeline that lowercases and collapses whitespace without transliteration.'''

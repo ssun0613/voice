@@ -30,7 +30,7 @@ class Config:
         self.parser.add_argument('--tensor_name', type=str, default='case')
         self.parser.add_argument('--checkpoint_name', type=str, default='case')
         self.parser.add_argument('--continue_train', type=bool, default=False)
-        self.parser.add_argument('--epochs', type=int, default=1000000)
+        self.parser.add_argument('--epochs', type=int, default=100000)
         self.parser.add_argument('--checkpoint_load_num', type=int, default=500)
 
         parser, _ = self.parser.parse_known_args()
@@ -46,9 +46,9 @@ class Config:
         self.parser.add_argument('--n_bins', type=float, default=self.dataset_info['n_bins'])
 
         self.parser.add_argument('--scheduler_name', type=str, default='cosine', help='[stepLR | cycliclr | cosine]')
-        self.parser.add_argument('--lr', type=float, default=1e-6)
+        self.parser.add_argument('--lr', type=float, default=1e-4)
         self.parser.add_argument('--optimizer_name', type=str, default='Adam', help='[Adam | RMSprop]')
-        self.parser.add_argument('--beta1', type=float, default=0.5, help='momentum term of adam')
+        self.parser.add_argument('--beta1', type=float, default=0.9, help='momentum term of adam')
         self.parser.add_argument('--momentum', type=float, default=0.9, help='monument for rmsprop optimizer')
         self.parser.add_argument('--weight_decay', type=float, default=5e-5, help='weight decay')
 

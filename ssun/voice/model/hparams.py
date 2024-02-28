@@ -7,7 +7,7 @@ from voice.model.tfcompat.hparam import HParams
 hparams = HParams(
     # model
     freq=8,
-    dim_neck=8,
+    dim_neck=16, #####
     freq_2=8,
     dim_neck_2=1,
     freq_3=8,

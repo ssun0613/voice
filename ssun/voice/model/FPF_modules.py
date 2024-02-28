@@ -6,10 +6,9 @@ import numpy as np
 import torch.nn.functional as F
 
 # from ssun.voice.utils.tools import get_mask_from_lengths, pad
-# from ssun.voice.model.text.symbols import symbols
 from utils.tools import get_mask_from_lengths, pad
+# from ssun.voice.model.text.symbols import symbols
 from .text.symbols import symbols
-
 from .blocks import (LinearNorm, Conv1DBlock, FFTBlock)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -106,14 +105,12 @@ class VarianceAdaptor(nn.Module):
             x, mel_len = self.length_regulator(x, duration_target, max_len)
             duration_rounded = duration_target
         else:
-
             # duration_rounded.shape : torch.Size([2, 16])
             # x.shape: torch.Size([2, 9, 512])
             # mel_len.shape : torch.Size([2])
             # mel_mask.shape: torch.Size([2, 9])
-
             duration_rounded = torch.clamp((torch.round(torch.exp(log_duration_prediction) - 1) * d_control), min=0,)
-            x, mel_len = self.length_regulator(x, duration_rounded, max_len=192)
+            x, mel_len = self.length_regulator(x, duration_rounded, max_len=192) ####
             mel_mask = get_mask_from_lengths(mel_len)
 
         return x, duration_rounded, mel_len, mel_mask
@@ -243,20 +240,18 @@ class Decoder(nn.Module):
         self.fc_layers = nn.ModuleList([LinearNorm(d_model, n_mel_channels) for _ in range(n_layers)])
 
     def forward(self, formant_hidden, excitation_hidden, mask):
-
         mel_iters = list()
         max_len = formant_hidden.shape[1]
-
         # -- Prepare masks
         slf_attn_mask = mask.unsqueeze(1).expand(-1, max_len, -1)
-
         # -- FC 1
         f_mel, e_mel = torch.split(self.fc_layer_1(torch.cat([formant_hidden, excitation_hidden], dim=-1)), self.n_mel_channels, dim=-1)
         mel_iters.append(f_mel + e_mel)
-
         # -- FC 2, 3
         dec_output = formant_hidden + excitation_hidden
         for i, (dec_layer, linear) in enumerate(zip(self.layer_stack, self.fc_layers)):
+            # if i == 1:
+            #     break
             dec_output, dec_slf_attn = dec_layer(dec_output, mask=mask, slf_attn_mask=slf_attn_mask)
             mel_iters.append(linear(dec_output).masked_fill(mask.unsqueeze(-1), 0))
 

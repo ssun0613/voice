@@ -8,7 +8,7 @@ from setproctitle import *
 
 from config import Config
 from model.FPF import FastPitchFormant
-from model.speechsplit_ec import speechsplit, InterpLnr_1
+from model.speechsplit_ec import speechsplit, InterpLnr
 
 from torch.utils.tensorboard import SummaryWriter
 from functions.load_network import load_networks, init_weights
@@ -39,7 +39,7 @@ def setup(opt):
     dataload = get_loader(opt)
 
     # -------------------------------------------- setup network --------------------------------------------
-    s_ = 'speechsplit'
+    s_ = 'speechsplit_32'
     # pre_encoder = speechsplit().to(device)
     pre_encoder = load_networks(speechsplit().to(device), s_, device,  net_name='Generator', weight_path= "/storage/mskim/")
     FPF = FastPitchFormant(preprocess_config, model_config).to(device)
@@ -69,6 +69,7 @@ if __name__ == "__main__":
     setproctitle(config.opt.network_name)
     torch.cuda.set_device(int(config.opt.gpu_id))
     torch.autograd.set_detect_anomaly(True)
+
     writer = SummaryWriter('/storage/mskim/tensorboard/{}'.format(config.opt.tensor_name))
     device, dataload, pre_encoder, FPF, optimizer_FPF, scheduler_FPF = setup(config.opt)
 
@@ -93,10 +94,9 @@ if __name__ == "__main__":
                 # -------------- pretrain : content --------------
 
                 x_f0 = torch.cat((mel_in, pitch_t), dim=-1)
-                x_f0_intrp = InterpLnr_1()(x_f0, len_org)
+                x_f0_intrp = InterpLnr()(x_f0, len_org)
                 f0_org_intrp = quantize_f0_torch(x_f0_intrp[:, :, -1])[0]
                 x_f0_intrp_org = torch.cat((x_f0_intrp[:, :, :-1], f0_org_intrp), dim=-1)
-
 
                 pre_c = pre_encoder.forward(x_f0_intrp_org, mel_in, sp_id)
 
@@ -109,10 +109,11 @@ if __name__ == "__main__":
                 for mel_out in mel_outs:
                     mel_loss += mse_loss_sum(mel_out, mel_in)
                 mel_loss = (mel_loss / (80 * mel_len)).mean()
-                mel_loss = mel_loss * 10
-                optimizer_FPF.zero_grad()
+                # mel_loss = mel_loss * 10
 
+                optimizer_FPF.zero_grad()
                 mel_loss.backward()
+                torch.nn.utils.clip_grad_norm_(FPF.parameters(), max_norm=5)
                 optimizer_FPF.step()
 
             if curr_epoch % 500 == 0:

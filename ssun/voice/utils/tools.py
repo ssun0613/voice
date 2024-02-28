@@ -57,8 +57,8 @@ def get_mask_from_lengths(lengths, max_len=None):
     if max_len is None:
         max_len = torch.max(lengths).item()
 
-    ids = torch.arange(0, 192).unsqueeze(0).expand(batch_size, -1).to(device)
-    mask = ids >= lengths.unsqueeze(1).expand(-1, 192)
+    ids = torch.arange(0, 192).unsqueeze(0).expand(batch_size, -1).to(device) ###
+    mask = ids >= lengths.unsqueeze(1).expand(-1, 192) ###
     # ids = torch.arange(0, max_len).unsqueeze(0).expand(batch_size, -1).to(device)
     # mask = ids >= lengths.unsqueeze(1).expand(-1, max_len)
 
